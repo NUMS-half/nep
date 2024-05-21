@@ -9,7 +9,7 @@
     <description>emp-entity</description>
 
     <parent>
-        <artifactId>newsoft_nep</artifactId>
+        <artifactId>neusoft_nep</artifactId>
         <groupId>com.neusoft.neu24</groupId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
@@ -21,6 +21,7 @@
         <spring-boot.version>3.0.2</spring-boot.version>
     </properties>
 
+    <!-- starters -->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

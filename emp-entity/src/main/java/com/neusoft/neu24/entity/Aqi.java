@@ -2,6 +2,8 @@ package com.neusoft.neu24.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +20,7 @@ import lombok.Setter;
 @Setter
 public class Aqi implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

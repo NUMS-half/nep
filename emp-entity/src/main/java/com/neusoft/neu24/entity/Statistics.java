@@ -1,5 +1,6 @@
 package com.neusoft.neu24.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -17,6 +18,7 @@ import lombok.Setter;
 @Setter
 public class Statistics implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

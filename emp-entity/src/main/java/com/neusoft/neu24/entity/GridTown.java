@@ -1,6 +1,8 @@
 package com.neusoft.neu24.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +20,7 @@ import lombok.Setter;
 @TableName("grid_town")
 public class GridTown implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

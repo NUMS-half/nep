@@ -1,7 +1,8 @@
-package com.neusoft.neu24.mapper;
+package com.neusoft.neu24.nepcommon.mapper;
 
-import com.neusoft.neu24.entity.User;
+
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.neusoft.neu24.nepcommon.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;

@@ -1,11 +1,12 @@
 package com.neusoft.neu24.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.io.Serial;
 import java.io.Serializable;
-import lombok.Getter;
-import lombok.Setter;
+
+import lombok.Data;
 
 /**
  * <p>
@@ -15,8 +16,7 @@ import lombok.Setter;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
-@Getter
-@Setter
+@Data
 @TableName("grid_city")
 public class GridCity implements Serializable {
 
@@ -26,6 +26,7 @@ public class GridCity implements Serializable {
     /**
      * 网格区域的城市ID
      */
+    @TableId(value = "city_id")
     private String cityId;
 
     /**

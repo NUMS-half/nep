@@ -1,9 +1,9 @@
-package com.neusoft.neu24.service.impl;
+package com.neusoft.neu24.nepcommon.service.impl;
 
-import com.neusoft.neu24.entity.User;
-import com.neusoft.neu24.mapper.UserMapper;
-import com.neusoft.neu24.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.neusoft.neu24.nepcommon.entity.User;
+import com.neusoft.neu24.nepcommon.mapper.UserMapper;
+import com.neusoft.neu24.nepcommon.service.IUserService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 

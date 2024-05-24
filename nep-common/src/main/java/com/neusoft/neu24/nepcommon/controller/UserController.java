@@ -1,14 +1,13 @@
-package com.neusoft.neu24.controller;
+package com.neusoft.neu24.nepcommon.controller;
 
 
-import com.neusoft.neu24.entity.HttpResponseEntity;
-import com.neusoft.neu24.service.IUserService;
+import com.neusoft.neu24.nepcommon.entity.HttpResponseEntity;
+import com.neusoft.neu24.nepcommon.service.IUserService;
 import jakarta.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
 /**

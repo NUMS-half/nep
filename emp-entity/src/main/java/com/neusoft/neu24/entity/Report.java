@@ -3,8 +3,9 @@ package com.neusoft.neu24.entity;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import lombok.Getter;
-import lombok.Setter;
+
+import lombok.Data;
+import com.baomidou.mybatisplus.annotation.TableId;
 
 /**
  * <p>
@@ -14,8 +15,7 @@ import lombok.Setter;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
-@Getter
-@Setter
+@Data
 public class Report implements Serializable {
 
     @Serial
@@ -24,6 +24,7 @@ public class Report implements Serializable {
     /**
      * 公众监督员上报信息UUID
      */
+    @TableId(value = "report_id")
     private String reportId;
 
     /**

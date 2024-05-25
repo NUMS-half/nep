@@ -1,5 +1,5 @@
 server:
-  port: 8085
+  port: 8085 # nep-connom port
 
 spring:
   datasource:
@@ -28,7 +28,7 @@ mybatis-plus:
     map-underscore-to-camel-case: true # underline to camel
     auto-mapping-behavior: full
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # log
-  mapper-locations: classpath:mapper/**/**Mapper.xml # mapper location
+  mapper-locations: classpath:mapper/**Mapper.xml # mapper location
   global-config:
     banner: true
     db-config:
@@ -36,8 +36,10 @@ mybatis-plus:
       logic-delete-value: 0
       logic-not-delete-value: 1
 
+# configure log output
 logging:
   level:
     root: info
+    com.neusoft.neu24.nepcommon.mapper: debug # print the executed SQL from Mybatis
 
 

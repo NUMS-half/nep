@@ -1,11 +1,14 @@
 package com.neusoft.neu24.nepcommon.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.nepcommon.entity.User;
 import com.neusoft.neu24.nepcommon.mapper.UserMapper;
 import com.neusoft.neu24.nepcommon.service.IUserService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 /**
@@ -22,6 +25,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     /**
      * 验证用户登录
+     *
      * @param username 用户名
      * @param password 密码
      * @return 用户ID
@@ -33,6 +37,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     /**
      * 用户注册
+     *
      * @param user 用户信息
      * @return 是否注册成功
      */
@@ -43,6 +48,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     /**
      * 更新用户信息
+     *
      * @param user 用户信息
      * @return 是否更新成功
      */
@@ -51,5 +57,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return userMapper.updateById(user) != 0;
     }
 
-
+    /**
+     * 获取所有用户信息列表
+     *
+     * @return 用户信息列表
+     */
+    @Override
+    public List<User> selectUser(User user) {
+        if ( user == null || user.getUserId() == null || user.getUserId().isEmpty() ) {
+            return userMapper.selectList(null);
+        } else {
+            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("user_id", user.getUserId());
+            return userMapper.selectList(queryWrapper);
+        }
+    }
 }

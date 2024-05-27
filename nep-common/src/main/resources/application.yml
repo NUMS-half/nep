@@ -1,5 +1,5 @@
 server:
-  port: 8085 # nep-connom port
+  port: 8085 # nep-common port
 
 spring:
   datasource:
@@ -12,23 +12,20 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     serialization:
       write-dates-as-timestamps: false
-  web:
-    resources:
-      static-locations: classpath:static/,file:static/
 
 #  security:
 #    user:
 #      name: user
-#      password: pwd123
+#      password: 123456
 
 mybatis-plus:
-  type-aliases-package: com.neusoft.neu24.nepcommon.entity # entity location
+  mapper-locations: classpath:mapper/**Mapper.xml # mapper file location
+  type-aliases-package: com.neusoft.neu24.nepcommon.entity # entity class location
   configuration:
     call-setters-on-nulls: false # set null value to entity
     map-underscore-to-camel-case: true # underline to camel
     auto-mapping-behavior: full
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # log
-  mapper-locations: classpath:mapper/**Mapper.xml # mapper location
   global-config:
     banner: true
     db-config:

@@ -2,6 +2,7 @@ package com.neusoft.neu24.nepcommon.service;
 
 import com.neusoft.neu24.nepcommon.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.dao.DataAccessException;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ public interface IUserService extends IService<User> {
      * @param user 用户信息
      * @return 注册是否成功
      */
-    boolean register(User user) throws Exception;
+    boolean register(User user) throws DataAccessException, Exception;
 
     /**
      * 更新用户信息业务
@@ -38,7 +39,7 @@ public interface IUserService extends IService<User> {
      * @param user 用户信息
      * @return 更新是否成功
      */
-    boolean updateUser(User user) throws Exception;
+    boolean updateUser(User user) throws DataAccessException, Exception;
 
     /**
      * 获取所有用户信息列表

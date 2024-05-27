@@ -6,6 +6,7 @@ import com.neusoft.neu24.nepcommon.entity.User;
 import com.neusoft.neu24.nepcommon.mapper.UserMapper;
 import com.neusoft.neu24.nepcommon.service.IUserService;
 import jakarta.annotation.Resource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,7 +43,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 是否注册成功
      */
     @Override
-    public boolean register(User user) throws Exception {
+    public boolean register(User user) throws DataAccessException, Exception {
         return userMapper.insert(user) != 0;
     }
 
@@ -64,11 +65,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     public List<User> selectUser(User user) {
-        if ( user == null || user.getUserId() == null || user.getUserId().isEmpty() ) {
+        if ( user == null ) {
             return userMapper.selectList(null);
         } else {
             QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("user_id", user.getUserId());
+            queryWrapper.eq("user_id", user.getUserId()).or().eq("username", user.getUsername());
             return userMapper.selectList(queryWrapper);
         }
     }

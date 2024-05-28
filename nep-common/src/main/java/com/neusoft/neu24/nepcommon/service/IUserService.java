@@ -1,5 +1,6 @@
 package com.neusoft.neu24.nepcommon.service;
 
+import com.neusoft.neu24.nepcommon.entity.HttpResponseEntity;
 import com.neusoft.neu24.nepcommon.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.dao.DataAccessException;
@@ -23,15 +24,15 @@ public interface IUserService extends IService<User> {
      * @param password 登录密码
      * @return 登录成功返回用户ID，失败返回null
      */
-    String login(String username, String password);
+    HttpResponseEntity<User> login(String username, String password);
 
     /**
-     * 用户注册业务
+     * 完整信息用户注册业务
      *
      * @param user 用户信息
      * @return 注册是否成功
      */
-    boolean register(User user) throws DataAccessException, Exception;
+    HttpResponseEntity<User> register(User user);
 
     /**
      * 更新用户信息业务
@@ -39,12 +40,20 @@ public interface IUserService extends IService<User> {
      * @param user 用户信息
      * @return 更新是否成功
      */
-    boolean updateUser(User user) throws DataAccessException, Exception;
+    HttpResponseEntity<Boolean> updateUser(User user);
 
     /**
      * 获取所有用户信息列表
      *
      * @return 用户信息列表
      */
-    List<User> selectUser(User user);
+    HttpResponseEntity<List<User>> selectAllUser();
+
+    /**
+     * 查询用户信息
+     *
+     * @param user 用户信息
+     * @return 查询结果
+     */
+    HttpResponseEntity<User> selectUser(User user);
 }

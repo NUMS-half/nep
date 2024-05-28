@@ -15,7 +15,6 @@
     <modules>
         <module>emp-entity</module>
         <module>nep-common</module>
-        <module>eureka-server</module>
     </modules>
 
     <parent>

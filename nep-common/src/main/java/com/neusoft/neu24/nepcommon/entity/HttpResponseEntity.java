@@ -2,8 +2,6 @@ package com.neusoft.neu24.nepcommon.entity;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 @Data
 @NoArgsConstructor
@@ -40,11 +38,11 @@ public class HttpResponseEntity<T> {
     }
 
     // 登录模块
-    public static final HttpResponseEntity<String> LOGIN_FAIL = new HttpResponseEntity<>(ResponseEnum.LOGIN_FAIL, null);
-    public static final HttpResponseEntity<String> LOGIN_CONTENT_IS_NULL = new HttpResponseEntity<>(ResponseEnum.LOGIN_CONTENT_IS_NULL, null);
+    public static final HttpResponseEntity<User> LOGIN_FAIL = new HttpResponseEntity<>(ResponseEnum.LOGIN_FAIL, null);
+    public static final HttpResponseEntity<User> LOGIN_CONTENT_IS_NULL = new HttpResponseEntity<>(ResponseEnum.LOGIN_CONTENT_IS_NULL, null);
 
     // 注册模块
-    public static final HttpResponseEntity<Boolean> REGISTER_FAIL = new HttpResponseEntity<>(ResponseEnum.REGISTER_FAIL, null);
+    public static final HttpResponseEntity<User> REGISTER_FAIL = new HttpResponseEntity<>(ResponseEnum.REGISTER_FAIL, null);
 
     // 修改模块
     public static final HttpResponseEntity<Boolean> UPDATE_FAIL = new HttpResponseEntity<>(ResponseEnum.UPDATE_FAIL, null);
@@ -68,15 +66,4 @@ public class HttpResponseEntity<T> {
         this.msg = msg;
         this.data = data;
     }
-
-//    public ResponseEntity<HttpResponseEntity<T>> toResponseEntity() {
-//        // 将整数状态码转换为 HttpStatus 枚举
-//        HttpStatus httpStatus = HttpStatus.resolve(this.code);
-//        if ( httpStatus == null ) {
-//            // 如果 code 无法解析成有效的 HttpStatus，可以默认为 OK 或自定义错误
-//            httpStatus = HttpStatus.OK;
-//        }
-//        // 返回构建的 ResponseEntity
-//        return new ResponseEntity<>(this, httpStatus);
-//    }
 }

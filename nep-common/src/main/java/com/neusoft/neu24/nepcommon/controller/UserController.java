@@ -4,14 +4,13 @@ import com.neusoft.neu24.nepcommon.entity.HttpResponseEntity;
 import com.neusoft.neu24.nepcommon.entity.User;
 import com.neusoft.neu24.nepcommon.service.IUserService;
 import jakarta.annotation.Resource;
-import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * 用户(User)控制器
+ * <b>用户(User)控制器<b/>
  *
  * @author Team-NEU-NanHu
  * @since 2024-05-21
@@ -25,72 +24,47 @@ public class UserController {
     private IUserService userService;
 
     /**
-     * 用户登录校验
+     * <b>用户登录校验<b/>
      *
      * @param loginInfo 登录信息
      * @return 登录校验结果
      */
     @PostMapping("/login")
-    public HttpResponseEntity<String> login(@RequestBody Map<String, Object> loginInfo) {
-        // 解析用户输入
+    public HttpResponseEntity<User> login(@RequestBody Map<String, Object> loginInfo) {
+        // 解析前端请求的用户数据
         String username = (String) loginInfo.get("username");
         String password = (String) loginInfo.get("password");
-        // 判断用户名和密码是否为空
-        if ( username == null || username.isEmpty() || password == null || password.isEmpty() ) {
-            return HttpResponseEntity.LOGIN_CONTENT_IS_NULL;
-        }
-        try {
-            // 登录校验
-            return userService.login(username, password) == null ?
-                    HttpResponseEntity.LOGIN_FAIL :
-                    new HttpResponseEntity<String>().loginSuccess(userService.login(username, password));
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<String>().serverError(null);
-        }
+        // 登录校验
+        return userService.login(username, password);
     }
 
     /**
-     * 用户注册
+     * <b>完整用户信息注册<b/>
      *
      * @param registerInfo 待注册的用户信息
      * @return 注册结果
      */
     @PostMapping("/register")
-    public HttpResponseEntity<Boolean> register(@RequestBody Map<String, Object> registerInfo) {
+    public HttpResponseEntity<User> register(@RequestBody Map<String, Object> registerInfo) {
         // 封装用户信息
         User user = mapToUser(registerInfo);
         // 注册
-        try {
-            return userService.register(user) ? new HttpResponseEntity<Boolean>().success(null) : HttpResponseEntity.REGISTER_FAIL;
-        } catch ( DataAccessException e ) {
-            return HttpResponseEntity.REGISTER_FAIL;
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<Boolean>().serverError(null);
-        }
+        return userService.register(user);
     }
 
     /**
-     * 查询所有用户信息
+     * <b>查询所有用户信息<b/>
      *
      * @return 查询结果
      */
     @PostMapping("/select/all")
     public HttpResponseEntity<List<User>> selectAllUser() {
-        try {
-            // 查询所有用户信息
-            List<User> users = userService.selectUser(null);
-            if ( users == null || users.isEmpty() ) {
-                return new HttpResponseEntity<List<User>>().resultIsNull(null);
-            } else {
-                return new HttpResponseEntity<List<User>>().success(users);
-            }
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<List<User>>().serverError(null);
-        }
+        // 直接查询所有用户信息
+        return userService.selectAllUser();
     }
 
     /**
-     * 查询用户信息
+     * <b>查询用户信息<b/>
      *
      * @param userInfo 用户信息
      * @return 查询结果
@@ -101,36 +75,30 @@ public class UserController {
         User user = new User();
         user.setUserId((String) userInfo.get("userId"));
         user.setUsername((String) userInfo.get("username"));
-        try {
-            User resultUser = userService.selectUser(user).get(0);
-            return new HttpResponseEntity<User>().success(resultUser);
-        } catch ( IndexOutOfBoundsException e ) {
-            return new HttpResponseEntity<User>().resultIsNull(null);
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<User>().serverError(null);
-        }
+        // 查询用户数据
+        return userService.selectUser(user);
     }
 
     /**
-     * 更新用户信息
+     * <b>更新用户信息<b/>
      *
      * @param userInfo 用户信息
      * @return 更新结果
      */
-    @PostMapping(value = "/update", headers = "Accept=application/json")
+    @PutMapping(value = "/update", headers = "Accept=application/json")
     public HttpResponseEntity<Boolean> updateUser(@RequestBody Map<String, Object> userInfo) {
         // 封装用户信息
         User user = mapToUser(userInfo);
-        // 更新用户数据
-        try {
-            return userService.updateUser(user) ? new HttpResponseEntity<Boolean>().success(null) : HttpResponseEntity.UPDATE_FAIL;
-        } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<Boolean>().serverError(null);
-        }
+        // 更新用户信息
+        return userService.updateUser(user);
     }
 
+    /**
+     * <b>将Map转换为User对象<b/>
+     *
+     * @param map 前端传来的Map对象
+     * @return User对象
+     */
     private User mapToUser(Map<String, Object> map) {
         User user = new User();
         map.forEach((key, value) -> {

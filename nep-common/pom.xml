@@ -7,11 +7,11 @@
 	<parent>
 		<artifactId>neusoft_nep</artifactId>
 		<groupId>com.neusoft.neu24</groupId>
-		<version>0.0.1-SNAPSHOT</version>
+		<version>1.0</version>
 	</parent>
 
 	<artifactId>nep-common</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0</version>
 	<name>nep-common</name>
 	<description>nep-common</description>
 
@@ -19,6 +19,9 @@
 
 	<properties>
 		<java.version>17</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<spring-boot.version>3.0.2</spring-boot.version>
 	</properties>
 
 	<dependencies>
@@ -28,6 +31,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<!--  Eureka Client  -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+			<version>4.0.1</version>
 		</dependency>
 
 		<dependency>

@@ -1,0 +1,11 @@
+server:
+  port: 10000 # eureka-server port
+
+spring:
+  application:
+    name: eureka-server
+eureka:
+  client:
+    fetch-registry: false # deal with Connection refused: connect
+    service-url: # Eureka address
+      defaultZone: http://localhost:10000/eureka/

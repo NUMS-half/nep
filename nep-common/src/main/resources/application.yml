@@ -15,10 +15,10 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:10000/eureka/
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:10000/eureka/
 
 #  security:
 #    user:

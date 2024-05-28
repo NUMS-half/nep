@@ -33,12 +33,12 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!--  Eureka Client  -->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-			<version>4.0.1</version>
-		</dependency>
+<!--		&lt;!&ndash;  Eureka Client  &ndash;&gt;-->
+<!--		<dependency>-->
+<!--			<groupId>org.springframework.cloud</groupId>-->
+<!--			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>-->
+<!--			<version>4.0.1</version>-->
+<!--		</dependency>-->
 
 		<dependency>
 			<groupId>org.mybatis.spring.boot</groupId>

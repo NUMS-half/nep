@@ -28,7 +28,7 @@
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-            <version>2021.0.4.0</version>
+            <version>${spring-cloud-alibaba.version}</version>
         </dependency>
 
         <!--  OpenFeign   -->

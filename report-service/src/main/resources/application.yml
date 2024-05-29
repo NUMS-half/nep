@@ -4,6 +4,17 @@ server:
 spring:
   application:
     name: report-service
+  cloud:
+    nacos:
+      server-addr: 8.130.74.245:8848
+      discovery:
+        username: nacos
+        password: nacos
+        heart-beat-interval: 1000
+        heart-beat-timeout: 1000
+        group: DEFAULT_GROUP
+        server-addr: 8.130.74.245:8848
+        namespace: public
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://8.130.74.245:3306/nep?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&allowMultiQueries=true

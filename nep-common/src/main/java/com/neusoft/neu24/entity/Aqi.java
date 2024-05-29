@@ -10,7 +10,7 @@ import lombok.Setter;
 
 /**
  * <p>
- * 
+ * 空气质量指标实体类
  * </p>
  *
  * @author Team-NEU-NanHu

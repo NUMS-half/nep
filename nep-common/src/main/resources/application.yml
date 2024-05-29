@@ -1,38 +1,34 @@
 server:
-  port: 8085 # nep-common port
+  port: 8086
 
 spring:
-  application:
-    name: nep-common # service name
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://8.130.74.245:3306/nep?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&allowMultiQueries=true
+    url: jdbc:mysql://localhost:3306/nep?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&allowMultiQueries=true
     username: root
-    password: '123456'
+    password: '030713'
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
     serialization:
       write-dates-as-timestamps: false
-
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:10000/eureka/
+  web:
+    resources:
+      static-locations: classpath:static/,file:static/
 
 #  security:
 #    user:
 #      name: user
-#      password: 123456
+#      password: pwd123
 
 mybatis-plus:
-  mapper-locations: classpath:mapper/**Mapper.xml # mapper file location
-  type-aliases-package: com.neusoft.neu24.nepcommon.entity # entity class location
+  type-aliases-package: com.neusoft.neu24..entity
   configuration:
-    call-setters-on-nulls: false # set null value to entity
-    map-underscore-to-camel-case: true # underline to camel
+    call-setters-on-nulls: false
+    map-underscore-to-camel-case: true
     auto-mapping-behavior: full
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # log
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapper/**/**Mapper.xml
   global-config:
     banner: true
     db-config:
@@ -40,10 +36,8 @@ mybatis-plus:
       logic-delete-value: 0
       logic-not-delete-value: 1
 
-# configure log output
 logging:
   level:
     root: info
-    com.neusoft.neu24.nepcommon.mapper: debug # print the executed SQL from Mybatis
 
 

@@ -1,0 +1,15 @@
+spring:
+  cloud:
+    nacos:
+      server-addr: 8.130.74.245:8848
+      config:
+        server-addr: 8.130.74.245:8848
+        namespace: 9d56fc19-1d3a-446c-a2d2-4cc50ca3615c
+      discovery:
+        username: nacos
+        password: nacos
+        heart-beat-interval: 1000
+        heart-beat-timeout: 1000
+        group: DEFAULT_GROUP
+        server-addr: 8.130.74.245:8848
+        namespace: 9d56fc19-1d3a-446c-a2d2-4cc50ca3615c

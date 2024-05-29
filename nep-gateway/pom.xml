@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.neusoft.neu24</groupId>
+        <artifactId>neusoft_nep</artifactId>
+        <version>1.0</version>
+    </parent>
+
+    <artifactId>nep-gateway</artifactId>
+    <version>1.0</version>
+    <name>nep-gateway</name>
+
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- nep 一般项依赖 -->
+        <dependency>
+            <groupId>com.neusoft.neu24</groupId>
+            <artifactId>nep-common</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <!-- SpringCloud 网关 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+            <version>3.1.3</version>
+        </dependency>
+
+        <!-- nacos discovery -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+            <version>2021.0.4.0</version>
+        </dependency>
+
+        <!-- 负载均衡 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+            <version>3.1.3</version>
+        </dependency>
+    </dependencies>
+
+</project>

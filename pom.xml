@@ -3,18 +3,19 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-
     <groupId>com.neusoft.neu24</groupId>
     <artifactId>neusoft_nep</artifactId>
     <version>1.0</version>
     <name>neusoft_nep</name>
-    <description>neusoft_nep</description>
 
     <packaging>pom</packaging>
 
     <modules>
-        <module>emp-entity</module>
         <module>nep-common</module>
+        <module>user-service</module>
+        <module>nep-gateway</module>
+        <module>report-service</module>
+        <module>statistics-service</module>
     </modules>
 
     <parent>
@@ -26,93 +27,108 @@
 
     <properties>
         <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.0.2</spring-boot.version>
+        <spring-cloud.version>2021.0.3</spring-cloud.version>
+        <spring-cloud-alibaba.version>2021.0.4.0</spring-cloud-alibaba.version>
+        <mybatis-plus.version>3.5.6</mybatis-plus.version>
+        <mysql.version>8.4.0</mysql.version>
+        <hutool.version>5.8.25</hutool.version>
     </properties>
 
     <dependencies>
 
-        <!--starters-->
+        <!--Springboot Web Starter-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>3.0.2</version>
+            <version>${spring-boot.version}</version>
         </dependency>
+
+        <!-- MybatisPlus Starter -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.5.6</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
 
-        <!--spring cloud-->
+        <!-- SpringCloud 依赖项管理 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-dependencies</artifactId>
-            <version>2021.0.3</version>
+            <version>${spring-cloud.version}</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
 
-        <!--spring cloud alibaba-->
+        <!-- SpringCloudAlibaba 依赖项管理 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-alibaba-dependencies</artifactId>
-            <version>2021.0.4.0</version>
+            <version>${spring-cloud-alibaba.version}</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
 
-        <!--热部署-->
+        <!-- hutool 工具 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>${hutool.version}</version>
+        </dependency>
+
+        <!-- SpringBoot 热部署 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
         </dependency>
 
-        <!--读取配置文件-->
+        <!-- 配置文件读取 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
         </dependency>
 
-        <!-- mybatis plus 生成器-->
+        <!-- MybatisPlus 生成器 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-generator</artifactId>
-            <version>3.5.6</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
 
-        <!--数据库连接池-->
+        <!-- Druid数据库连接池 -->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
             <version>1.2.22</version>
         </dependency>
 
-        <!--分页插件-->
+        <!-- 分页插件 -->
         <dependency>
             <groupId>org.apache.velocity</groupId>
             <artifactId>velocity-engine-core</artifactId>
             <version>2.3</version>
         </dependency>
 
-        <!-- JWT -->
+        <!-- Jwt -->
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>4.4.0</version>
         </dependency>
 
-
-        <!-- mysql 驱动-->
+        <!-- Mysql 驱动 -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>8.4.0</version>
+            <version>${mysql.version}</version>
             <scope>runtime</scope>
         </dependency>
 
-        <!--lombok-->
+        <!-- Lombok 插件 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

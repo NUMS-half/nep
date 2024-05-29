@@ -1,0 +1,14 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: nep-gateway
+  cloud:
+    nacos:
+      server-addr: 8.130.74.245:8848
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**

@@ -12,3 +12,11 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/user/**
+        - id: report-service
+          uri: lb://report-service
+          predicates:
+            - Path=/report/**
+        - id: statistics-service
+          uri: lb://statistics-service
+          predicates:
+            - Path=/statistics/**

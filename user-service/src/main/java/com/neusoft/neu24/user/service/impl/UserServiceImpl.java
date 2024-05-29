@@ -2,8 +2,8 @@ package com.neusoft.neu24.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.neusoft.neu24.user.entity.HttpResponseEntity;
-import com.neusoft.neu24.user.entity.User;
+import com.neusoft.neu24.entity.HttpResponseEntity;
+import com.neusoft.neu24.entity.User;
 import com.neusoft.neu24.user.mapper.UserMapper;
 import com.neusoft.neu24.user.service.IUserService;
 import jakarta.annotation.Resource;

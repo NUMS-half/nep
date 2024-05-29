@@ -16,12 +16,13 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- nep 一般项依赖 -->
+        <!-- 实体类等依赖 -->
         <dependency>
             <groupId>com.neusoft.neu24</groupId>
             <artifactId>nep-common</artifactId>
             <version>1.0</version>
         </dependency>
+
         <!-- SpringCloud 网关 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

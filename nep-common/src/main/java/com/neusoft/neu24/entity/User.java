@@ -1,10 +1,10 @@
 package com.neusoft.neu24.entity;
 
-import com.baomidou.mybatisplus.annotation.TableId;
-import lombok.Data;
-
 import java.io.Serial;
 import java.io.Serializable;
+
+import lombok.Data;
+import com.baomidou.mybatisplus.annotation.TableId;
 
 /**
  * <p>

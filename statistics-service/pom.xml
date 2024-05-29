@@ -12,11 +12,12 @@
 
     <artifactId>statistics-service</artifactId>
     <version>1.0</version>
-    <name>nep-common</name>
+    <name>statistics-service</name>
 
     <packaging>jar</packaging>
 
     <dependencies>
+        <!-- 实体类等依赖 -->
         <dependency>
             <groupId>com.neusoft.neu24</groupId>
             <artifactId>nep-common</artifactId>
@@ -28,6 +29,20 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
             <version>2021.0.4.0</version>
+        </dependency>
+
+        <!--  OpenFeign   -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+            <version>3.1.3</version>
+        </dependency>
+
+        <!--负载均衡器-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+            <version>3.1.3</version>
         </dependency>
     </dependencies>
 </project>

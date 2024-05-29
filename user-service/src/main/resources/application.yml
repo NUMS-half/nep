@@ -1,5 +1,5 @@
 server:
-  port: 8085 # nep-common port
+  port: 8081 # user-service port
 
 spring:
   application:
@@ -22,7 +22,7 @@ spring:
 
 mybatis-plus:
   mapper-locations: classpath:mapper/**Mapper.xml # mapper file location
-  type-aliases-package: com.neusoft.neu24.user.entity # entity class location
+  type-aliases-package: com.neusoft.neu24.entity # entity class location
   configuration:
     call-setters-on-nulls: false # set null value to entity
     map-underscore-to-camel-case: true # underline to camel
@@ -39,6 +39,6 @@ mybatis-plus:
 logging:
   level:
     root: info
-    com.neusoft.neu24.nepcommon.mapper: debug # print the executed SQL from Mybatis
+    com.neusoft.neu24.user.mapper: debug # print the executed SQL from Mybatis
 
 

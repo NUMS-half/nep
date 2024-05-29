@@ -1,4 +1,4 @@
-package com.neusoft.neu24.controller;
+package com.neusoft.neu24.statistics.controller;
 
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2024-05-21
  */
 @RestController
-@RequestMapping("/report")
-public class ReportController {
+@RequestMapping("/statistics")
+public class StatisticsController {
 
 }
 

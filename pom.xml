@@ -80,11 +80,11 @@
             <version>${hutool.version}</version>
         </dependency>
 
-        <!-- SpringBoot 热部署 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-        </dependency>
+<!--        &lt;!&ndash; SpringBoot 热部署 &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-devtools</artifactId>-->
+<!--        </dependency>-->
 
         <!-- 配置文件读取 -->
         <dependency>
@@ -103,7 +103,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
-            <version>1.2.22</version>
+            <version>1.2.23</version>
         </dependency>
 
         <!-- 分页插件 -->

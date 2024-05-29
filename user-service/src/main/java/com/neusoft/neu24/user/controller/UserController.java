@@ -1,7 +1,7 @@
 package com.neusoft.neu24.user.controller;
 
-import com.neusoft.neu24.user.entity.HttpResponseEntity;
-import com.neusoft.neu24.user.entity.User;
+import com.neusoft.neu24.entity.HttpResponseEntity;
+import com.neusoft.neu24.entity.User;
 import com.neusoft.neu24.user.service.IUserService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;

@@ -1,4 +1,4 @@
-package com.neusoft.neu24.service.impl;
+package com.neusoft.neu24.statistics.service.impl;
 
 import com.neusoft.neu24.entity.Statistics;
 import com.neusoft.neu24.mapper.StatisticsMapper;

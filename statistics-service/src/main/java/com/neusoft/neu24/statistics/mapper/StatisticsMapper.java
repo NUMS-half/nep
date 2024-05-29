@@ -1,4 +1,4 @@
-package com.neusoft.neu24.mapper;
+package com.neusoft.neu24.statistics.mapper;
 
 import com.neusoft.neu24.entity.Statistics;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;

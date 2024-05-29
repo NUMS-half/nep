@@ -17,6 +17,7 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <!-- 实体类等依赖 -->
         <dependency>
             <groupId>com.neusoft.neu24</groupId>
             <artifactId>nep-common</artifactId>

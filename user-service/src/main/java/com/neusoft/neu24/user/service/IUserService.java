@@ -1,7 +1,7 @@
 package com.neusoft.neu24.user.service;
 
-import com.neusoft.neu24.user.entity.HttpResponseEntity;
-import com.neusoft.neu24.user.entity.User;
+import com.neusoft.neu24.entity.HttpResponseEntity;
+import com.neusoft.neu24.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

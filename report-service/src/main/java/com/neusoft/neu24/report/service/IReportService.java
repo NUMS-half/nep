@@ -33,7 +33,7 @@ public interface IReportService extends IService<Report> {
 
     /**
      * 根据ID查询反馈信息
-     * @param report 查询目标ID
+     * @param reportId 查询目标ID
      * @return 查询结果
      */
     HttpResponseEntity<Report> selectReportById(String reportId);

@@ -1,8 +1,8 @@
 package com.neusoft.neu24.statistics.service.impl;
 
 import com.neusoft.neu24.entity.Statistics;
-import com.neusoft.neu24.mapper.StatisticsMapper;
-import com.neusoft.neu24.service.IStatisticsService;
+import com.neusoft.neu24.statistics.mapper.StatisticsMapper;
+import com.neusoft.neu24.statistics.service.IStatisticsService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 

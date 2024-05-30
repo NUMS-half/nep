@@ -136,10 +136,18 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Nacos 日志适配 -->
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>logback-adapter</artifactId>
             <version>1.0.1</version>
+        </dependency>
+
+        <!-- 引入okhttp 提高openfeign性能 -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-okhttp</artifactId>
+            <version>13.1</version>
         </dependency>
 
     </dependencies>

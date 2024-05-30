@@ -15,11 +15,14 @@ spring:
         group: DEFAULT_GROUP
         server-addr: 8.130.74.245:8848
         namespace: public
+    openfeign:
+      okhttp:
+        enabled: true
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://8.130.74.245:3306/nep?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&allowMultiQueries=true
-    username: root
-    password: '123456'
+    username: nanhu
+    password: 'neu123456'
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss

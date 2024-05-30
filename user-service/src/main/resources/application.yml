@@ -52,4 +52,10 @@ logging:
     root: info
     com.neusoft.neu24.user.mapper: debug # print the executed SQL from Mybatis
 
+nep:
+  jwt:
+    location: classpath:nep.jks
+    alias: nanhu
+    password: neu123456
+    tokenTTL: 30m
 

@@ -3,12 +3,8 @@ package com.neusoft.neu24.report.controller;
 
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
-import com.neusoft.neu24.entity.User;
-import com.neusoft.neu24.report.client.UserClient;
 import com.neusoft.neu24.report.service.IReportService;
 import jakarta.annotation.Resource;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

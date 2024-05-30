@@ -22,3 +22,14 @@ spring:
           uri: lb://statistics-service
           predicates:
             - Path=/statistics/**
+
+nep:
+  jwt:
+    location: classpath:nep.jks
+    alias: nanhu
+    password: neu123456
+    tokenTTL: 30m
+  auth:
+    excludePaths:
+        - /user/login
+        - /user/register

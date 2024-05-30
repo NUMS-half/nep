@@ -27,7 +27,7 @@ public class GridCity implements Serializable {
      * 网格区域的城市ID
      */
     @TableId(value = "city_id")
-    private String cityId;
+    private int cityId;
 
     /**
      * 网格区域的城市名称
@@ -35,9 +35,14 @@ public class GridCity implements Serializable {
     private String cityName;
 
     /**
-     * 网格区域的市所属的省ID
+     * 网格区域的市编码
      */
-    private String provinceId;
+    private String cityCode;
+
+    /**
+     * 网格区域的市所属的省编码
+     */
+    private String provinceCode;
 
 
 }

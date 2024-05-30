@@ -1,15 +1,12 @@
 package com.neusoft.neu24.report.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.collection.CollUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.neusoft.neu24.client.UserClient;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.User;
-import com.neusoft.neu24.report.client.UserClient;
 import com.neusoft.neu24.report.mapper.ReportMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.report.service.IReportService;
@@ -37,7 +34,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
     private ReportMapper reportMapper;
 
     /**
-     * 用户服务客户端
+     * 用户服务客户端(由动态代理注入)
      */
     private final UserClient userClient;
 

@@ -1,4 +1,4 @@
-package com.neusoft.neu24.report.client;
+package com.neusoft.neu24.client;
 
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;

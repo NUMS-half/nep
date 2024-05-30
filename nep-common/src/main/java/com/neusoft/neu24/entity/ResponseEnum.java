@@ -26,13 +26,13 @@ public enum ResponseEnum {
     UPDATE_SUCCESS(203, "用户信息更新成功"),
     RESULT_IS_NULL(204, "查询结束，结果为空"),
 
-    UNAUTHORIZED(300, "未授权的请求."),
-    LOGIN_CONTENT_IS_NULL(301, "用户名或密码不能为空"),
-    REGISTER_FAIL(302, "用户名已存在，或检查输入是否合法"),
-    UPDATE_FAIL(303, "用户信息更新失败，请检查输入"),
-    LOGIN_FAIL(304, "用户名或密码错误"),
+    LOGIN_CONTENT_IS_NULL(300, "用户名或密码不能为空"),
+    REGISTER_FAIL(301, "用户名已存在，或检查输入是否合法"),
+    UPDATE_FAIL(302, "用户信息更新失败，请检查输入"),
+    LOGIN_FAIL(303, "用户名或密码错误"),
 
     BAD_REQUEST(400, "请求失败"),
+    UNAUTHORIZED(401, "未授权的请求，请登录后重试"),
     FORBIDDEN(403, "资源不允许被访问"),
     NOT_FOUND(404, "访问的资源不存在"),
 

@@ -2,11 +2,14 @@ package com.neusoft.neu24.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.neusoft.neu24.user.config.JwtProperties;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
 import com.neusoft.neu24.user.mapper.UserMapper;
 import com.neusoft.neu24.user.service.IUserService;
+import com.neusoft.neu24.user.utils.JwtUtil;
 import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -20,10 +23,15 @@ import java.util.List;
  * @since 2024-05-21
  */
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
     @Resource
     private UserMapper userMapper;
+
+    private final JwtUtil jwtUtil;
+
+    private final JwtProperties jwtProperties;
 
     /**
      * 验证用户登录
@@ -50,6 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                     return HttpResponseEntity.LOGIN_FAIL;
                 }
             }
+            user.setToken(jwtUtil.createToken(user.getUserId(), jwtProperties.getTokenTTL()));
             // 登录成功,返回用户信息
             return new HttpResponseEntity<User>().loginSuccess(user);
         } catch ( Exception e ) {

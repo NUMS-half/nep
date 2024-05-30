@@ -3,6 +3,7 @@ package com.neusoft.neu24.entity;
 import java.io.Serial;
 import java.io.Serializable;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import com.baomidou.mybatisplus.annotation.TableId;
 
@@ -90,6 +91,12 @@ public class User implements Serializable {
      * 用户备注
      */
     private String remarks;
+
+    /**
+     * 用户token
+     */
+    @TableField(exist = false)
+    private String token;
 
 
 }

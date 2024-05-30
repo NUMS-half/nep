@@ -3,6 +3,7 @@ package com.neusoft.neu24.user.controller;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
 import com.neusoft.neu24.user.service.IUserService;
+import com.neusoft.neu24.utils.UserContext;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -70,7 +71,8 @@ public class UserController {
      * @return 查询结果
      */
     @PostMapping(value = "/select", headers = "Accept=application/json")
-    public HttpResponseEntity<User> selectUser(@RequestBody Map<String, Object> userInfo) {
+    public HttpResponseEntity<User> selectUser(@RequestBody Map<String, Object> userInfo){
+        System.out.println(UserContext.getUser());
         // 封装用户信息
         User user = new User();
         user.setUserId((String) userInfo.get("userId"));

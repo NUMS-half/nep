@@ -8,7 +8,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableDiscoveryClient
 @SpringBootApplication
-@EnableFeignClients
+@EnableFeignClients(basePackages = "com.neusoft.neu24.client")
 public class ReportApplication {
     public static void main(String[] args) {
         SpringApplication.run(ReportApplication.class, args);

@@ -15,6 +15,7 @@ public class HttpResponseEntity<T> {
 
     /**
      * 资源请求成功
+     *
      * @param data 请求到的数据
      */
     public HttpResponseEntity<T> success(T data) {
@@ -23,6 +24,7 @@ public class HttpResponseEntity<T> {
 
     /**
      * 用户登录成功
+     *
      * @param data 登录成功的用户信息
      */
     public HttpResponseEntity<T> loginSuccess(T data) {
@@ -49,10 +51,20 @@ public class HttpResponseEntity<T> {
 
     /**
      * 请求失败
+     *
      * @return 请求失败的响应实体
      */
     public HttpResponseEntity<T> failure() {
         return new HttpResponseEntity<>(ResponseEnum.BAD_REQUEST, null);
+    }
+
+    /**
+     * 无权限访问
+     *
+     * @return 无权限访问的响应实体
+     */
+    public HttpResponseEntity<String> unauthorized(String msg, String detail) {
+        return new HttpResponseEntity<>(300, msg, detail);
     }
 
     public HttpResponseEntity(ResponseEnum response, T data) {

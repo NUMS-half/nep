@@ -56,24 +56,6 @@
             <version>${mybatis-plus.version}</version>
         </dependency>
 
-        <!-- SpringCloud 依赖项管理 -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-dependencies</artifactId>
-            <version>${spring-cloud.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-
-        <!-- SpringCloudAlibaba 依赖项管理 -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-alibaba-dependencies</artifactId>
-            <version>${spring-cloud-alibaba.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-
         <!-- hutool 工具 -->
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -114,12 +96,12 @@
             <version>2.3</version>
         </dependency>
 
-        <!-- Jwt -->
-        <dependency>
-            <groupId>com.auth0</groupId>
-            <artifactId>java-jwt</artifactId>
-            <version>4.4.0</version>
-        </dependency>
+<!--        &lt;!&ndash; Jwt &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.auth0</groupId>-->
+<!--            <artifactId>java-jwt</artifactId>-->
+<!--            <version>4.4.0</version>-->
+<!--        </dependency>-->
 
         <!-- Mysql 驱动 -->
         <dependency>
@@ -147,16 +129,35 @@
         <dependency>
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-okhttp</artifactId>
-            <version>13.1</version>
         </dependency>
 
     </dependencies>
+
     <dependencyManagement>
         <dependencies>
+            <!-- SpringBoot 依赖项管理 -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- SpringCloud 依赖项管理 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- SpringCloudAlibaba 依赖项管理 -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -179,10 +180,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
-                <configuration>
-                    <mainClass>com.neusoft.neu24.NeusoftNepApplication</mainClass>
-                    <skip>true</skip>
-                </configuration>
             </plugin>
         </plugins>
     </build>

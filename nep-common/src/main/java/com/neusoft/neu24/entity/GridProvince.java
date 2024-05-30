@@ -27,12 +27,17 @@ public class GridProvince implements Serializable {
      * 网格区域的省ID
      */
     @TableId(value = "province_id")
-    private String provinceId;
+    private int provinceId;
 
     /**
      * 网格区域的省名称
      */
     private String provinceName;
+
+    /**
+     * 网格区域的省编码
+     */
+    private String provinceCode;
 
 
 }

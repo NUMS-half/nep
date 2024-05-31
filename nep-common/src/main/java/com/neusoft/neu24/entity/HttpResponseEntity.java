@@ -39,15 +39,20 @@ public class HttpResponseEntity<T> {
         return new HttpResponseEntity<>(ResponseEnum.RESULT_IS_NULL, data);
     }
 
-    // 登录模块
+    public HttpResponseEntity<T> addFail(T data) {
+        return new HttpResponseEntity<>(ResponseEnum.ADD_FAIL, data);
+    }
+
+    // 用户登录注册
     public static final HttpResponseEntity<User> LOGIN_FAIL = new HttpResponseEntity<>(ResponseEnum.LOGIN_FAIL, null);
     public static final HttpResponseEntity<User> LOGIN_CONTENT_IS_NULL = new HttpResponseEntity<>(ResponseEnum.LOGIN_CONTENT_IS_NULL, null);
-
-    // 注册模块
     public static final HttpResponseEntity<User> REGISTER_FAIL = new HttpResponseEntity<>(ResponseEnum.REGISTER_FAIL, null);
 
-    // 修改模块
+    // 修改
     public static final HttpResponseEntity<Boolean> UPDATE_FAIL = new HttpResponseEntity<>(ResponseEnum.UPDATE_FAIL, null);
+
+    // 指派
+    public static final HttpResponseEntity<Boolean> ASSIGN_FAIL = new HttpResponseEntity<>(ResponseEnum.ASSIGN_FAIL, null);
 
     /**
      * 请求失败

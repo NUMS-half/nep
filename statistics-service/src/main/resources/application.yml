@@ -9,6 +9,10 @@ spring:
     url: jdbc:mysql://8.130.74.245:3306/nep?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&allowMultiQueries=true
     username: nanhu
     password: 'neu123456'
+    hikari:
+      connection-timeout: 30000 # 30s
+      max-lifetime: 1800000 # 30min
+      idle-timeout: 600000 # 10min
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss

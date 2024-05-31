@@ -35,17 +35,17 @@ public class Report implements Serializable {
     /**
      * 上报信息所属网格：省份ID
      */
-    private String provinceId;
+    private Integer provinceId;
 
     /**
      * 上报信息所属网格：市ID
      */
-    private String cityId;
+    private Integer cityId;
 
     /**
      * 上报信息所属网格：区/县ID
      */
-    private String townId;
+    private Integer townId;
 
     /**
      * 上报信息的详细地址

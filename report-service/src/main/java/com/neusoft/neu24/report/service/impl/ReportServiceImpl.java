@@ -1,5 +1,6 @@
 package com.neusoft.neu24.report.service.impl;
 
+import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -20,7 +21,7 @@ import java.util.Map;
 
 /**
  * <p>
- * 服务实现类
+ * 反馈信息服务实现类
  * </p>
  *
  * @author Team-NEU-NanHu
@@ -46,7 +47,15 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      */
     @Override
     public HttpResponseEntity<Report> addReport(Report report) {
-        return null;
+        try {
+            return reportMapper.insert(report) != 0 ?
+                    new HttpResponseEntity<Report>().success(report) :
+                    new HttpResponseEntity<Report>().addFail(null);
+        } catch ( DataAccessException e ) {
+            return new HttpResponseEntity<Report>().addFail(null);
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<Report>().serverError(null);
+        }
     }
 
     /**
@@ -69,17 +78,29 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
     }
 
     /**
-     * @param reportId
-     * @param userId
-     * @return
+     * 指派网格员
+     *
+     * @param reportId      反馈信息ID
+     * @param gridManagerId 网格员ID
+     * @return 是否指派成功
      */
     @Override
-    public HttpResponseEntity<Boolean> setGridManager(String reportId, String userId) {
+    public HttpResponseEntity<Boolean> assignGridManager(String reportId, String gridManagerId) {
 
-        Map<String, Object> map = Map.of("userId", userId);
-        User user = userClient.selectUser(map).getData();
-        System.out.println("user: " + user);
-        return null;
+        Map<String, Object> map = Map.of("userId", gridManagerId);
+        try {
+            HttpResponseEntity<User> res = userClient.selectUser(map);
+            if ( res.getCode() != 200 ) {
+                return HttpResponseEntity.ASSIGN_FAIL;
+            }
+            Report report = reportMapper.selectById(reportId);
+            report.setGmUserId(gridManagerId);
+            report.setAssignTime(LocalDateTimeUtil.now());
+            report.setState(1);
+            return updateReport(report);
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
     }
 
     /**
@@ -115,26 +136,32 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
     @Override
     public HttpResponseEntity<IPage<Report>> selectReportByPage(Report report, long current, long size) {
         IPage<Report> page = new Page<>(current, size);
+        IPage<Report> pages;
         QueryWrapper<Report> queryWrapper = new QueryWrapper<>();
+        if ( report != null ) {
+            // 使用 HashMap 存储属性值，以确保类型正确
+            Map<String, Object> params = new HashMap<>();
+            params.put("report_id", report.getReportId());
+            params.put("user_id", report.getUserId());
+            params.put("province_id", report.getProvinceId());
+            params.put("city_id", report.getCityId());
+            params.put("town_id", report.getTownId());
+            params.put("address", report.getAddress());
+            params.put("information", report.getInformation());
+            params.put("estimated_level", report.getEstimatedLevel());
+            params.put("report_time", report.getReportTime());
+            params.put("gm_user_id", report.getGmUserId());
+            params.put("assign_time", report.getAssignTime());
+            params.put("state", report.getState());
+            // 添加查询条件
+            queryWrapper.allEq(params);
 
-        // 使用 HashMap 存储属性值，以确保类型正确
-        Map<String, Object> params = new HashMap<>();
-        params.put("report_id", report.getReportId());
-        params.put("user_id", report.getUserId());
-        params.put("province_id", report.getProvinceId());
-        params.put("city_id", report.getCityId());
-        params.put("town_id", report.getTownId());
-        params.put("address", report.getAddress());
-        params.put("information", report.getInformation());
-        params.put("estimated_level", report.getEstimatedLevel());
-        params.put("report_time", report.getReportTime());
-        params.put("gm_user_id", report.getGmUserId());
-        params.put("assign_time", report.getAssignTime());
-        params.put("state", report.getState());
-        // 添加查询条件
-        queryWrapper.allEq(params);
-
-        IPage<Report> pages = getBaseMapper().selectPage(page, queryWrapper);
-        return new HttpResponseEntity<IPage<Report>>().success(pages);
+            pages = getBaseMapper().selectPage(page, queryWrapper);
+        } else {
+            pages = getBaseMapper().selectPage(page, null);
+        }
+        return pages == null || pages.getTotal() == 0 ?
+                new HttpResponseEntity<IPage<Report>>().resultIsNull(null) :
+                new HttpResponseEntity<IPage<Report>>().success(pages);
     }
 }

@@ -30,17 +30,17 @@ public class Statistics implements Serializable {
     /**
      * 检测所属省份ID
      */
-    private String provinceId;
+    private Integer provinceId;
 
     /**
      * 检测所属城市ID
      */
-    private String cityId;
+    private Integer cityId;
 
     /**
      * 检测所属区/县ID
      */
-    private String townId;
+    private Integer townId;
 
     /**
      * 检测详细地址

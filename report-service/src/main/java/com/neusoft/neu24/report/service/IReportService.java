@@ -29,7 +29,7 @@ public interface IReportService extends IService<Report> {
      */
     HttpResponseEntity<Boolean> updateReport(Report report);
 
-    HttpResponseEntity<Boolean> setGridManager(String reportId, String userId);
+    HttpResponseEntity<Boolean> assignGridManager(String reportId, String gridManagerId);
 
     /**
      * 根据ID查询反馈信息

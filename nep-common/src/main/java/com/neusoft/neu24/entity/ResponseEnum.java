@@ -27,9 +27,11 @@ public enum ResponseEnum {
     RESULT_IS_NULL(204, "查询结束，结果为空"),
 
     LOGIN_CONTENT_IS_NULL(300, "用户名或密码不能为空"),
-    REGISTER_FAIL(301, "用户名已存在，或检查输入是否合法"),
-    UPDATE_FAIL(302, "用户信息更新失败，请检查输入"),
+    REGISTER_FAIL(301, "用户名已存在，或输入不合法"),
     LOGIN_FAIL(303, "用户名或密码错误"),
+    UPDATE_FAIL(302, "信息修改失败，请检查输入"),
+    ADD_FAIL(304, "信息新增失败，请检查输入"),
+    ASSIGN_FAIL(305, "当前区域无匹配的网格员"),
 
     BAD_REQUEST(400, "请求失败"),
     UNAUTHORIZED(401, "未授权的请求，请登录后重试"),

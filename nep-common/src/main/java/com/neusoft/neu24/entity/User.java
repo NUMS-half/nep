@@ -70,17 +70,17 @@ public class User implements Serializable {
     /**
      * 网格员所属网格区域的省ID
      */
-    private String gmProvinceId;
+    private Integer gmProvinceId;
 
     /**
      * 网格员所属网格区域的市ID
      */
-    private String gmCityId;
+    private Integer gmCityId;
 
     /**
      * 网格员所属网格区域的区ID
      */
-    private String gmTownId;
+    private Integer gmTownId;
 
     /**
      * 网格员当前状态：	0：空闲	1：指派工作中	2：休假	3：其他

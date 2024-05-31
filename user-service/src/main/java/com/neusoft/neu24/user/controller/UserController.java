@@ -133,13 +133,13 @@ public class UserController {
                     user.setHeadPhotoLoc((String) value);
                     break;
                 case "gmProvinceId":
-                    user.setGmProvinceId((String) value);
+                    user.setGmProvinceId((Integer) value);
                     break;
                 case "gmCityId":
-                    user.setGmCityId((String) value);
+                    user.setGmCityId((Integer) value);
                     break;
                 case "gmTownId":
-                    user.setGmTownId((String) value);
+                    user.setGmTownId((Integer) value);
                     break;
                 case "gmState":
                     user.setGmState((Integer) value);

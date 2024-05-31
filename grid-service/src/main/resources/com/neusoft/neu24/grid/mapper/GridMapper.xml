@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.neu24.grid.mapper.GridMapper">
+
+    <select id="getProvinces" resultType="com.neusoft.neu24.entity.Grid">
+        SELECT
+            province_id AS provinceId,
+            province_name AS provinceName,
+            province_code AS provinceCode
+        FROM grid_province
+    </select>
+
+    <select id="getCitiesByProvinceCode" resultType="com.neusoft.neu24.entity.Grid" parameterType="String">
+        SELECT
+            city_id AS cityId,
+            city_name AS cityName,
+            city_code AS cityCode,
+            province_code AS provinceCode
+        FROM grid_city
+        WHERE province_code = #{provinceCode}
+    </select>
+
+    <select id="getTownsByCityCode" resultType="com.neusoft.neu24.entity.Grid" parameterType="String">
+        SELECT
+            town_id AS townId,
+            town_name AS townName,
+            town_code AS townCode,
+            city_code AS cityCode
+        FROM grid_town
+        WHERE city_code = #{cityCode}
+    </select>
+
+    <update id="updateGridTown" parameterType="com.neusoft.neu24.entity.Grid">
+        UPDATE grid_town
+        <set>
+            <if test="townName != null">
+                town_name = #{townName},
+            </if>
+            <if test="cityCode != null">
+                city_code = #{cityCode},
+            </if>
+        </set>
+        WHERE town_id = #{townId} OR town_code = #{townCode}
+    </update>
+</mapper>

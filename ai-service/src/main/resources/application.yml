@@ -1,11 +1,15 @@
 server:
   port: 8090
 
-
 spring:
-  cloud:
-    ai:
-      tongyi:
-        chat:
-         options:
-           api-key: sk-22a37bc326c24fedbd5ef7c713053e13 # my API-KEY
+  ai:
+    openai:
+      chat:
+        options:
+          model: gpt-3.5-turbo
+        base-url: https://api.aigcapi.me
+        api-key: sk-2TFAohVQGbmUtCyYB030D3237eA543878bC25b4cD817Ca1e
+      api-key: sk-2TFAohVQGbmUtCyYB030D3237eA543878bC25b4cD817Ca1e
+  mvc:
+    async:
+      request-timeout: -1

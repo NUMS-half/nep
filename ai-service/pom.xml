@@ -25,11 +25,24 @@
             <version>1.0</version>
         </dependency>
 
-        <!-- alibaba ai -->
         <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-ai</artifactId>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-bom</artifactId>
+            <version>0.8.1</version>
+            <type>pom</type>
+            <scope>import</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+            <version>0.8.1</version>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>com.alibaba.cloud</groupId>-->
+<!--            <artifactId>spring-cloud-starter-alibaba-ai</artifactId>-->
+<!--        </dependency>-->
 
         <!-- nacos 注册中心 -->
         <dependency>

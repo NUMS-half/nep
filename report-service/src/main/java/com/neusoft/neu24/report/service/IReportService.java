@@ -54,4 +54,13 @@ public interface IReportService extends IService<Report> {
      * @return 分页查询结果
      */
     HttpResponseEntity<IPage<Report>> selectReportByPage(Report report, long current, long size);
+
+    /**
+     * 设置反馈信息状态
+     *
+     * @param reportId 反馈信息ID
+     * @param state    状态
+     * @return 是否设置成功
+     */
+    HttpResponseEntity<Boolean> setReportState(String reportId, Integer state);
 }

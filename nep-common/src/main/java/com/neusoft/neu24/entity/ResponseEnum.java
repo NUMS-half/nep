@@ -34,11 +34,14 @@ public enum ResponseEnum {
     ASSIGN_FAIL(305, "当前区域无匹配的网格员"),
     PHONE_INVALID(306, "手机号码不合法"),
     SMS_CODE_ERROR(307, "验证码错误或验证码过期"),
+    STATE_INVALID(308, "状态码不合法"),
 
     BAD_REQUEST(400, "请求失败"),
     UNAUTHORIZED(401, "未授权的请求，请登录后重试"),
     FORBIDDEN(403, "资源不允许被访问"),
     NOT_FOUND(404, "访问的资源不存在"),
+
+    SERVICE_UNAVAILABLE(503, "服务不可用"),
 
     SERVER_ERROR(500, "服务器接口异常");
 

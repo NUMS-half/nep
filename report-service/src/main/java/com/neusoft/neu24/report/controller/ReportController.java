@@ -22,6 +22,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/report")
+@CrossOrigin("http://localhost:5173")
 public class ReportController {
 
     @Resource
@@ -72,7 +73,7 @@ public class ReportController {
     /**
      * 根据条件分页查询反馈信息
      *
-     * @param map 查询条件
+     * @param map 查询条件(为null时查询全部)
      * @param current 当前页
      * @param size 每页数据条数
      * @return 分页查询结果
@@ -90,6 +91,17 @@ public class ReportController {
         } catch ( Exception e ) {
             return new HttpResponseEntity<IPage<Report>>().serverError(null);
         }
+    }
+
+    /**
+     * 更新反馈信息状态
+     * @param reportId 反馈ID
+     * @param state 当前状态
+     * @return 更新结果
+     */
+    @PostMapping("/state")
+    public HttpResponseEntity<Boolean> setReportState(@RequestParam("reportId") String reportId ,@RequestParam("state") Integer state) {
+        return reportService.setReportState(reportId,state);
     }
 
     private Report mapToReport(Map<String, Object> map) {

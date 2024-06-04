@@ -18,6 +18,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/grid")
+@CrossOrigin("http://localhost:5173")
 public class GridController {
 
     @Resource

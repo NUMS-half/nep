@@ -43,6 +43,10 @@ public class HttpResponseEntity<T> {
         return new HttpResponseEntity<>(ResponseEnum.ADD_FAIL, data);
     }
 
+    public HttpResponseEntity<T> serviceUnavailable(T data) {
+        return new HttpResponseEntity<>(ResponseEnum.SERVICE_UNAVAILABLE, data);
+    }
+
     // 用户登录注册
     public static final HttpResponseEntity<User> LOGIN_FAIL = new HttpResponseEntity<>(ResponseEnum.LOGIN_FAIL, null);
     public static final HttpResponseEntity<User> LOGIN_CONTENT_IS_NULL = new HttpResponseEntity<>(ResponseEnum.LOGIN_CONTENT_IS_NULL, null);
@@ -50,6 +54,7 @@ public class HttpResponseEntity<T> {
 
     // 修改
     public static final HttpResponseEntity<Boolean> UPDATE_FAIL = new HttpResponseEntity<>(ResponseEnum.UPDATE_FAIL, null);
+    public static final HttpResponseEntity<Boolean> STATE_INVALID = new HttpResponseEntity<>(ResponseEnum.STATE_INVALID, null);
 
     // 指派
     public static final HttpResponseEntity<Boolean> ASSIGN_FAIL = new HttpResponseEntity<>(ResponseEnum.ASSIGN_FAIL, null);

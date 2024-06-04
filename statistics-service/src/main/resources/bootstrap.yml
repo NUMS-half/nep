@@ -16,4 +16,5 @@ spring:
         file-extension: yaml
         shared-configs:
           - data-id: shared-jdbc.yml # shared jdbc config file
+          - data-id: shared-redis.yml
 

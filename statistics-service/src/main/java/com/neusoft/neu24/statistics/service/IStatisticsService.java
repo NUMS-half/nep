@@ -42,4 +42,11 @@ public interface IStatisticsService extends IService<Statistics> {
      * @return 分页查询结果
      */
     HttpResponseEntity<IPage<Statistics>> selectStatisticsByPage(Statistics statistics, long current, long size);
+
+    /**
+     * <b>根据ID查询统计信息<b/>
+     * @param statisticsId 统计信息ID
+     * @return 查询结果
+     */
+    HttpResponseEntity<Statistics> selectStatisticsById(String statisticsId);
 }

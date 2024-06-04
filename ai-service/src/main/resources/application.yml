@@ -1,0 +1,11 @@
+server:
+  port: 8090
+
+
+spring:
+  cloud:
+    ai:
+      tongyi:
+        chat:
+         options:
+           api-key: sk-22a37bc326c24fedbd5ef7c713053e13 # my API-KEY

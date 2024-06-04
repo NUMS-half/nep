@@ -28,6 +28,11 @@ public class Statistics implements Serializable {
     private String statisticsId;
 
     /**
+     * 反馈ID
+     */
+    private String reportId;
+
+    /**
      * 检测所属省份ID
      */
     private Integer provinceId;

@@ -164,4 +164,31 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
                 new HttpResponseEntity<IPage<Report>>().resultIsNull(null) :
                 new HttpResponseEntity<IPage<Report>>().success(pages);
     }
+
+    /**
+     * 设置反馈信息状态
+     *
+     * @param reportId 反馈信息ID
+     * @param state    状态
+     * @return 是否设置成功
+     */
+    @Override
+    public HttpResponseEntity<Boolean> setReportState(String reportId, Integer state) {
+        // 检查状态是否合法
+        if ( state == null || state < 0 || state > 2 ) {
+            return HttpResponseEntity.STATE_INVALID;
+        }
+        try {
+            Report report = reportMapper.selectById(reportId);
+            if ( report == null ) {
+                return new HttpResponseEntity<Boolean>().resultIsNull(null);
+            }
+            report.setState(state);
+            return reportMapper.updateState(report.getState(),report.getReportId()) != 0 ?
+                    new HttpResponseEntity<Boolean>().success(true) :
+                    HttpResponseEntity.UPDATE_FAIL;
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
+    }
 }

@@ -2,13 +2,16 @@ package com.neusoft.neu24.user.controller;
 
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
+import com.neusoft.neu24.user.config.UserProperties;
 import com.neusoft.neu24.user.service.IUserService;
 import com.neusoft.neu24.utils.UserContext;
 import jakarta.annotation.Resource;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * <b>用户(User)控制器<b/>
@@ -16,13 +19,17 @@ import java.util.Map;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
-@CrossOrigin("*")
+@CrossOrigin("http://localhost:5173")
 @RestController
 @RequestMapping("/user")
 public class UserController {
 
     @Resource
     private IUserService userService;
+
+    // 配置热更新的注入
+    @Resource
+    private UserProperties userProperties;
 
     /**
      * <b>用户登录校验<b/>
@@ -32,11 +39,45 @@ public class UserController {
      */
     @PostMapping("/login")
     public HttpResponseEntity<User> login(@RequestBody Map<String, Object> loginInfo) {
+        // TODO 未完成, 限制用户最大登录失败次数
+        System.out.println(userProperties.getLoginMaxTimes());
+
         // 解析前端请求的用户数据
         String username = (String) loginInfo.get("username");
         String password = (String) loginInfo.get("password");
         // 登录校验
         return userService.login(username, password);
+    }
+
+    /**
+     * <b>发送短信验证码<b/>
+     *
+     * @param phone 手机号
+     * @return 验证发是否发送成功
+     */
+    @PostMapping("/sendSMSCode")
+    public HttpResponseEntity<Boolean> sendSMSCode(@RequestParam("phone") String phone) {
+        try {
+            // 发送短信验证码
+            return userService.sendSMSCode(phone);
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
+    }
+
+    /**
+     * <b>手机号登录/注册<b/>
+     *
+     * @param loginInfo 登录信息
+     * @return 登录/注册结果
+     */
+    @PostMapping("/login/phone")
+    public HttpResponseEntity<User> loginByPhone(@RequestBody Map<String, Object> loginInfo) {
+        // 解析前端请求的用户数据
+        String phone = (String) loginInfo.get("phone");
+        String smsCode = (String) loginInfo.get("smsCode");
+        // 登录校验
+        return userService.loginByPhone(phone, smsCode);
     }
 
     /**
@@ -71,15 +112,31 @@ public class UserController {
      * @return 查询结果
      */
     @PostMapping(value = "/select", headers = "Accept=application/json")
-    public HttpResponseEntity<User> selectUser(@RequestBody Map<String, Object> userInfo){
+    public HttpResponseEntity<User> selectUser(@RequestBody Map<String, Object> userInfo) {
         System.out.println(UserContext.getUser());
         // 封装用户信息
         User user = new User();
         user.setUserId((String) userInfo.get("userId"));
         user.setUsername((String) userInfo.get("username"));
+
         // 查询用户数据
         return userService.selectUser(user);
     }
+
+    /**
+     * <b>条件查找网格员<b/>
+     *
+     * @param gmInfo 网格员信息
+     * @return 查询结果
+     */
+    @PostMapping(value = "/select/gm", headers = "Accept=application/json")
+    public HttpResponseEntity<List<User>> selectGridManagers(@RequestBody Map<String, Object> gmInfo) {
+        // 封装用户信息
+        User user = mapToUser(gmInfo);
+        // 查询网格员信息
+        return userService.selectGridManagers(user);
+    }
+
 
     /**
      * <b>更新用户信息<b/>

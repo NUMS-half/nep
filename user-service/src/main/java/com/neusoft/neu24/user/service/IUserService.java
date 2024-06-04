@@ -55,4 +55,29 @@ public interface IUserService extends IService<User> {
      * @return 查询结果
      */
     HttpResponseEntity<User> selectUser(User user);
+
+    /**
+     * 条件查找网格员
+     *
+     * @param gridManager 网格员信息
+     * @return 查询结果
+     */
+    HttpResponseEntity<List<User>> selectGridManagers(User gridManager);
+
+    /**
+     * 发送短信验证码
+     *
+     * @param phone 手机号
+     * @return 发送是否成功
+     */
+    HttpResponseEntity<Boolean> sendSMSCode(String phone);
+
+    /**
+     * 手机号登录/注册
+     *
+     * @param phone   手机号
+     * @param smsCode 短信验证码
+     * @return 登录/注册是否成功
+     */
+    HttpResponseEntity<User> loginByPhone(String phone, String smsCode);
 }

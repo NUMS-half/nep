@@ -1,58 +1,7 @@
 server:
   port: 8084
 
-spring:
-  application:
-    name: grid-service # service name
-  cloud:
-    nacos:
-      server-addr: 8.130.74.245:8848
-      discovery:
-        username: nacos
-        password: nacos
-        heart-beat-interval: 1000
-        heart-beat-timeout: 1000
-        group: DEFAULT_GROUP
-        server-addr: 8.130.74.245:8848
-        namespace: public
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://8.130.74.245:3306/nep?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&allowMultiQueries=true
-    username: nanhu
-    password: 'neu123456'
-    hikari:
-      connection-timeout: 30000 # 30s
-      max-lifetime: 1800000 # 30min
-      idle-timeout: 600000 # 10min
-  jackson:
-    time-zone: Asia/Shanghai
-    date-format: yyyy-MM-dd HH:mm:ss
-    serialization:
-      write-dates-as-timestamps: false
-  data: # redis config
-    redis:
-      host: 8.130.74.245 # redis from WSL docker
-      port: 6379
-      password: neu123456
-      database: 0 # grid use db0
-
-mybatis-plus:
-  mapper-locations: classpath:mapper/**Mapper.xml # mapper file location
-  type-aliases-package: com.neusoft.neu24.entity # entity class location
-  configuration:
-    call-setters-on-nulls: false # set null value to entity
-    map-underscore-to-camel-case: true # underline to camel
-    auto-mapping-behavior: full
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # log
-  global-config:
-    banner: true
-    db-config:
-      id-type: assign_uuid # auto assign UUID
-      logic-delete-value: 0
-      logic-not-delete-value: 1
-
 logging:
   level:
     root: info
-#    com.neusoft.neu24.grid.mapper: debug
-    com.neusoft.neu24.grid.mapper: error
+    com.neusoft.neu24.grid.mapper: debug

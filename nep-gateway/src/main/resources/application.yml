@@ -1,13 +1,7 @@
 server:
   port: 8080
 spring:
-  application:
-    name: nep-gateway
-  main:
-    web-application-type: reactive
   cloud:
-    nacos:
-      server-addr: 8.130.74.245:8848
     gateway:
       routes:
         - id: user-service
@@ -34,6 +28,8 @@ nep:
     password: neu123456
     tokenTTL: 30m
   auth:
-    excludePaths:
+    excludePaths: # exclude paths unified config
         - /user/login
+        - /user/login/phone
         - /user/register
+        - /user/sendSMSCode

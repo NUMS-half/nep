@@ -2,11 +2,14 @@ package com.neusoft.neu24.gateway.filter;
 
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.gateway.config.AuthProperties;
+import com.neusoft.neu24.gateway.config.JwtProperties;
 import com.neusoft.neu24.gateway.utils.JwtUtil;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -16,6 +19,9 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Map;
+
+import static com.neusoft.neu24.config.RedisConstants.LOGIN_TOKEN;
 
 @Component
 @RequiredArgsConstructor
@@ -25,6 +31,11 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
      * 请求路径配置信息(构造函数注入)
      */
     private final AuthProperties authProperties;
+
+    private final JwtProperties jwtProperties;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * Jwt工具类(构造函数注入)
@@ -65,12 +76,26 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         }
         String userId = response.getData();
 
-        // 5. 传递用户信息到后端服务
+
+//        // TODO 5. 刷新token与redis中的token过期时间
+////        String oldToken = token;
+//        // 5.1 刷新 token 有效期
+//        String newToken = jwtUtil.refreshToken(token, jwtProperties.getTokenTTL());
+//        // 5.2 刷新 Redis 中数据的有效期
+//        // 5.2.1 获取 Redis 中的用户数据
+////        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + userId);
+////        if ( !userMap.isEmpty() ) {
+//            // 5.2.2 刷新新token的Redis数据过期时间
+//            stringRedisTemplate.expire(LOGIN_TOKEN + userId, jwtProperties.getTokenTTL());
+////        }
+//
+        // 6. 传递用户信息到后端服务
         ServerWebExchange newExchange = exchange.mutate()
                 .request(builder -> builder.header("userId", userId)) // 传递用户信息
+//                .request(builder -> builder.header("Authorization", newToken)) // 传递新token
                 .build();
 
-        // 6. 放行
+        // 7. 放行
         return chain.filter(newExchange);
     }
 
@@ -86,6 +111,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
     /**
      * 判断请求路径是否需要登录拦截
+     *
      * @param path 请求路径
      * @return 是否需要登录拦截
      */

@@ -1,7 +1,8 @@
-package com.neusoft.neu24.mapper;
+package com.neusoft.neu24.statistics.mapper;
 
-import com.neusoft.neu24.entity.Aqi;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.neusoft.neu24.entity.Aqi;
+
 
 /**
  * <p>
@@ -11,6 +12,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
-public interface AqiMapper extends BaseMapper<Aqi> {
 
+public interface AqiMapper extends BaseMapper<Aqi> {
 }

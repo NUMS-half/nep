@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.report.service.IReportService;
+import com.neusoft.neu24.utils.UserContext;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,6 +49,7 @@ public class ReportController {
      */
     @PutMapping(value = "/assign", headers = "Accept=application/json")
     public HttpResponseEntity<Boolean> reportAssign(@RequestBody Map<String, Object> map) {
+
         // 获取参数
         String reportId = (String) map.get("reportId");
         String gmUserId = (String) map.get("gmUserId");

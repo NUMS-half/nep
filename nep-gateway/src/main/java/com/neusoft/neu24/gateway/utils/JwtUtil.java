@@ -84,4 +84,23 @@ public class JwtUtil {
             return new HttpResponseEntity<>().unauthorized("无效的token", null);
         }
     }
+
+    /**
+     * 刷新token有效期
+     *
+     * @param token 旧的token
+     * @param ttl 新的token有效时间
+     * @return 新的token
+     */
+    public String refreshToken(String token, Duration ttl) {
+        // 1.解析旧token
+        JWT jwt = JWT.of(token).setSigner(jwtSigner);
+
+        // 2.获取用户信息
+        String userId = (String) jwt.getPayload("user");
+
+        // 3.创建新token
+        return createToken(userId, ttl);
+    }
+
 }

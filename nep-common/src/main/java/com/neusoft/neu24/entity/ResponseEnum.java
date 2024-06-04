@@ -32,6 +32,8 @@ public enum ResponseEnum {
     UPDATE_FAIL(302, "信息修改失败，请检查输入"),
     ADD_FAIL(304, "信息新增失败，请检查输入"),
     ASSIGN_FAIL(305, "当前区域无匹配的网格员"),
+    PHONE_INVALID(306, "手机号码不合法"),
+    SMS_CODE_ERROR(307, "验证码错误或验证码过期"),
 
     BAD_REQUEST(400, "请求失败"),
     UNAUTHORIZED(401, "未授权的请求，请登录后重试"),

@@ -29,6 +29,13 @@ public interface IReportService extends IService<Report> {
      */
     HttpResponseEntity<Boolean> updateReport(Report report);
 
+    /**
+     * 指派网格员
+     *
+     * @param reportId      反馈信息ID
+     * @param gridManagerId 网格员ID
+     * @return 是否指派成功
+     */
     HttpResponseEntity<Boolean> assignGridManager(String reportId, String gridManagerId);
 
     /**

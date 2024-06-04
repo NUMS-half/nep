@@ -1,6 +1,10 @@
 package com.neusoft.neu24.utils;
 
 public class UserContext {
+
+    private UserContext() {
+    }
+
     private static final ThreadLocal<String> tl = new ThreadLocal<>();
 
     /**

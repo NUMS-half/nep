@@ -1,10 +1,15 @@
 package com.neusoft.neu24.interceptors;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.neusoft.neu24.config.RedisConstants;
 import com.neusoft.neu24.utils.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+
+import java.util.Map;
 
 @Component
 public class UserInfoInterceptor implements HandlerInterceptor {

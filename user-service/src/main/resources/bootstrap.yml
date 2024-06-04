@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: user-service
+  cloud:
+    nacos:
+      server-addr: 8.130.74.245:8848
+      discovery:
+        username: nacos
+        password: nacos
+        heart-beat-interval: 1000
+        heart-beat-timeout: 1000
+        group: DEFAULT_GROUP
+        server-addr: 8.130.74.245:8848
+        namespace: public
+      config:
+        file-extension: yaml
+        shared-configs:
+          - data-id: shared-jdbc.yml # shared jdbc config file
+          - data-id: shared-redis.yml
+

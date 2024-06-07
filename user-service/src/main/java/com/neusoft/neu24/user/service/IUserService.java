@@ -84,7 +84,7 @@ public interface IUserService extends IService<User> {
 
     /**
      * 分页查询
-     * @param map
+     * @param user
      * @param current
      * @param size
      * @return

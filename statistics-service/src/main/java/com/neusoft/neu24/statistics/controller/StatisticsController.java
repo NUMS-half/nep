@@ -22,7 +22,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/statistics")
-@CrossOrigin("http://localhost:5173")
 public class StatisticsController {
 
     @Resource

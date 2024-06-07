@@ -2,7 +2,10 @@ package com.neusoft.neu24.user.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.entity.ResponseEnum;
 import com.neusoft.neu24.user.config.JwtProperties;
@@ -10,10 +13,13 @@ import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
 import com.neusoft.neu24.user.mapper.UserMapper;
 import com.neusoft.neu24.user.service.IUserService;
+import com.neusoft.neu24.user.utils.HttpUtils;
 import com.neusoft.neu24.user.utils.JwtUtil;
 import com.neusoft.neu24.user.utils.RegexUtils;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -62,6 +68,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         try {
             User user = userMapper.selectOne(new QueryWrapper<User>().eq("username", username));
+            if ( user != null ) {
+                Integer status = user.getStatus();
+                if ( status == 0 ) {
+                    return new HttpResponseEntity<>(ResponseEnum.FORBIDDEN, null);
+                } else if ( status == -1 ) {
+                    return new HttpResponseEntity<>(ResponseEnum.USER_NOT_EXIST, null);
+                }
+            }
             // 验证用户是否存在
             if ( user == null ) {
                 return HttpResponseEntity.LOGIN_FAIL;
@@ -93,7 +107,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 发送是否成功
      */
     @Override
-    public HttpResponseEntity<Boolean> sendSMSCode(String phone) {
+    public HttpResponseEntity<Object> sendSMSCode(String phone) {
 
         // 1. 校验手机号格式是否合规
         if ( !RegexUtils.isPhoneInvalid(phone) ) {
@@ -101,16 +115,37 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return new HttpResponseEntity<>(ResponseEnum.PHONE_INVALID, null);
         }
         // 2. 手机号合规，生成随机的6位验证码
-        String SMSCode = RandomUtil.randomNumbers(6);
+        String smsCode = RandomUtil.randomNumbers(6);
 
         // 3. 将验证码存入Redis中，设置过期时间为 5 分钟(在RedisConstants中统一配置)
-        stringRedisTemplate.opsForValue().set(LOGIN_SMS_KEY + phone, SMSCode, LOGIN_SMS_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(LOGIN_SMS_KEY + phone, smsCode, LOGIN_SMS_TTL, TimeUnit.MINUTES);
 
-        // TODO 4. 通过第三方API发送验证码到手机(这里未实现，仅打印输出)
-        System.out.println("验证码发送成功, 验证码为:{ " + SMSCode + " }");
+        // 4. 通过第三方API发送验证码到手机
+        System.out.println("验证码发送成功, 验证码为:{ " + smsCode + " }");
+        String host = "https://gyytz.market.alicloudapi.com";
+        String path = "/sms/smsSend";
+        String method = "POST";
+        String appcode = "01600dfa8a514d3bac819f016523b4a7";
+        Map<String, String> headers = new HashMap<>();
+        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
+        headers.put("Authorization", "APPCODE " + appcode);
+        Map<String, String> querys = new HashMap<>();
+        querys.put("mobile", phone);
+        querys.put("param", "**code**:" + smsCode + "**minute**:5");
 
-        // 5. 返回成功
-        return new HttpResponseEntity<Boolean>().success(true);
+        //smsSignId（短信前缀）和templateId（短信模板），可登录国阳云控制台自助申请。参考文档：http://help.guoyangyun.com/Problem/Qm.html
+        querys.put("smsSignId", "2e65b1bb3d054466b82f0c9d125465e2");
+        querys.put("templateId", "908e94ccf08b4476ba6c876d13f084ad");
+        Map<String, String> bodys = new HashMap<>();
+
+        try {
+            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
+            // 5. 返回成功
+            return new HttpResponseEntity<>().success(response.getStatusLine().getStatusCode());
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<>().serverError(null);
+        }
+
     }
 
     /**
@@ -136,6 +171,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 3. 根据手机号查询用户，判断用户是否存在
         User user = userMapper.selectOne(new QueryWrapper<User>().eq("telephone", phone));
+        if ( user != null ) {
+            Integer status = user.getStatus();
+            if ( status == 0 ) {
+                return new HttpResponseEntity<>(ResponseEnum.FORBIDDEN, null);
+            } else if ( status == -1 ) {
+                return new HttpResponseEntity<>(ResponseEnum.USER_NOT_EXIST, null);
+            }
+        }
+
         // 用户不存在，则立即创建用户，进行注册
         if ( user == null ) {
             user = registerUserByPhone(phone);
@@ -156,6 +200,67 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     /**
+     * @param user
+     * @param current
+     * @param size
+     * @return
+     */
+    @Override
+    public HttpResponseEntity<IPage<User>> selectUserByPage(User user, long current, long size) {
+        IPage<User> page = new Page<>(current, size);
+        IPage<User> pages;
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        if ( user != null ) {
+            queryWrapper
+                    .like(User::getUsername, user.getUsername())
+                    .or()
+                    .like(User::getRealName, user.getRealName())
+                    .or()
+                    .like(User::getTelephone, user.getTelephone());
+        }
+        pages = getBaseMapper().selectPage(page, queryWrapper.ne(User::getStatus, -1));
+        return pages == null || pages.getTotal() == 0 ?
+                new HttpResponseEntity<IPage<User>>().resultIsNull(null) :
+                new HttpResponseEntity<IPage<User>>().success(pages);
+    }
+
+    /**
+     * 修改用户状态
+     *
+     * @param user
+     * @return
+     */
+    @Override
+    public HttpResponseEntity<Boolean> changeStatus(User user, Integer status) {
+        try {
+            return userMapper.updateStatus(user.getUserId(), status) != 0 ?
+                    new HttpResponseEntity<Boolean>().success(null) :
+                    HttpResponseEntity.UPDATE_FAIL;
+        } catch ( DataAccessException e ) {
+            return HttpResponseEntity.UPDATE_FAIL;
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
+    }
+
+    /**
+     * 删除用户
+     *
+     * @param user
+     * @return
+     */
+    @Override
+    public HttpResponseEntity<Boolean> deleteUser(User user) {
+        try {
+            return userMapper.updateStatus(user.getUserId(), -1) != 0 ?
+                    new HttpResponseEntity<Boolean>().success(true) :
+                    new HttpResponseEntity<>(ResponseEnum.DELETE_FAIL, false);
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<Boolean>().serverError(false);
+        }
+    }
+
+    /**
      * 用户注册
      *
      * @param user 用户信息
@@ -163,7 +268,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     public HttpResponseEntity<User> register(User user) {
+        if ( !RegexUtils.isPhoneInvalid(user.getTelephone()) ) {
+            return new HttpResponseEntity<>(ResponseEnum.PHONE_INVALID, null);
+        }
         try {
+            user.setStatus(1);
             // 插入用户信息
             return userMapper.insert(user) != 0 ?
                     new HttpResponseEntity<User>().success(user) :
@@ -203,7 +312,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Override
     public HttpResponseEntity<List<User>> selectAllUser() {
         try {
-            List<User> users = userMapper.selectList(null);
+            List<User> users = userMapper.selectList(new QueryWrapper<User>().ne("status", -1));
             if ( users == null || users.isEmpty() ) {
                 return new HttpResponseEntity<List<User>>().resultIsNull(null);
             } else {
@@ -226,14 +335,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         } else {
             try {
                 // 优先查询 Redis 缓存
-                Map<Object,Object> cashUserMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + user.getUserId());
-                if(!cashUserMap.isEmpty()) {
+                Map<Object, Object> cashUserMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + user.getUserId());
+                if ( !cashUserMap.isEmpty() ) {
                     User cashUser = BeanUtil.fillBeanWithMap(cashUserMap, new User(), false);
-                    return new HttpResponseEntity<User>().success(cashUser);
+                    if ( cashUser.getStatus() != -1 ) {
+                        return new HttpResponseEntity<User>().success(cashUser);
+                    }
                 }
                 // 缓存中没有数据时再从数据库查询
                 QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("user_id", user.getUserId()).or().eq("username", user.getUsername());
+                queryWrapper.eq("user_id", user.getUserId()).or().eq("username", user.getUsername()).ne("status", -1);
                 List<User> users = userMapper.selectList(queryWrapper);
                 if ( users == null || users.isEmpty() ) {
                     return new HttpResponseEntity<User>().resultIsNull(null);
@@ -269,7 +380,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 if ( gridManager.getGmTownId() != null ) {
                     queryWrapper.eq("gm_town_id", gridManager.getGmTownId());
                 }
-                queryWrapper.eq("role_id", 2);
+                queryWrapper.eq("role_id", 2).ne("status", -1);
                 List<User> gridManagers = userMapper.selectList(queryWrapper);
 
                 // 处理查询结果
@@ -300,6 +411,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         user.setBirthday("2000-01-01");
         user.setGender(1);
         user.setRoleId(1);
+        user.setStatus(1);
 
         // 保存用户
         userMapper.insert(user);
@@ -317,6 +429,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         map.put("gender", toStringOrNull(user.getGender()));
         map.put("birthday", user.getBirthday());
         map.put("roleId", toStringOrNull(user.getRoleId()));
+        map.put("status", toStringOrNull(user.getStatus()));
         map.put("headPhotoLoc", user.getHeadPhotoLoc());
         map.put("gmProvinceId", toStringOrNull(user.getGmProvinceId()));
         map.put("gmCityId", toStringOrNull(user.getGmCityId()));

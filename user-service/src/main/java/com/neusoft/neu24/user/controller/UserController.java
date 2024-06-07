@@ -1,12 +1,12 @@
 package com.neusoft.neu24.user.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
 import com.neusoft.neu24.user.config.UserProperties;
 import com.neusoft.neu24.user.service.IUserService;
 import com.neusoft.neu24.utils.UserContext;
 import jakarta.annotation.Resource;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +19,6 @@ import java.util.Map;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
-@CrossOrigin("http://localhost:5173")
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -56,12 +55,12 @@ public class UserController {
      * @return 验证发是否发送成功
      */
     @PostMapping("/sendSMSCode")
-    public HttpResponseEntity<Boolean> sendSMSCode(@RequestParam("phone") String phone) {
+    public HttpResponseEntity<Object> sendSMSCode(@RequestParam("phone") String phone) {
         try {
             // 发送短信验证码
             return userService.sendSMSCode(phone);
         } catch ( Exception e ) {
-            return new HttpResponseEntity<Boolean>().serverError(null);
+            return new HttpResponseEntity<>().serverError(null);
         }
     }
 
@@ -103,6 +102,29 @@ public class UserController {
     public HttpResponseEntity<List<User>> selectAllUser() {
         // 直接查询所有用户信息
         return userService.selectAllUser();
+    }
+
+    /**
+     * <b>分页查询用户信息<b/>
+     *
+     * @param map
+     * @param current
+     * @param size
+     * @return
+     */
+    @PostMapping(value = "/select/page", headers = "Accept=application/json")
+    public HttpResponseEntity<IPage<User>> selectUserByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
+        try {
+        if ( map == null || map.isEmpty() ) {
+            return userService.selectUserByPage(null, current, size);
+        } else {
+            User user = mapToUser(map);
+
+            return userService.selectUserByPage(user, current, size);
+        }
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<IPage<User>>().serverError(null);
+        }
     }
 
     /**
@@ -150,6 +172,31 @@ public class UserController {
         User user = mapToUser(userInfo);
         // 更新用户信息
         return userService.updateUser(user);
+    }
+
+    /**
+     * <b>修改用户状态<b/>
+     *
+     * @param user   用户信息
+     * @param status 用户状态
+     * @return 修改结果
+     */
+    @PutMapping(value = "/update/status", headers = "Accept=application/json")
+    public HttpResponseEntity<Boolean> updateUserStatus(@RequestBody User user, @RequestParam("status") int status) {
+        // 更新用户状态
+        return userService.changeStatus(user, status);
+    }
+
+    /**
+     * <b>删除用户信息<b/>
+     *
+     * @param user 用户信息
+     * @return 删除结果
+     */
+    @PutMapping(value = "/delete", headers = "Accept=application/json")
+    public HttpResponseEntity<Boolean> deleteUser(@RequestBody User user) {
+        // 删除用户信息
+        return userService.deleteUser(user);
     }
 
     /**

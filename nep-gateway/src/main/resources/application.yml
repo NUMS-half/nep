@@ -3,6 +3,18 @@ server:
 spring:
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Vary Access-Control-Allow-Credentials Access-Control-Allow-Origin, RETAIN_UNIQUE
+        - DedupeResponseHeader=Access-Control-Allow-Origin, RETAIN_FIRST
+      globalcors: # Cors Config
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedHeaders: "*"
+            allowedMethods: "*"
+            allowCredentials: true
+            maxAge: 3600
       routes:
         - id: user-service
           uri: lb://user-service
@@ -20,6 +32,10 @@ spring:
           uri: lb://grid-service
           predicates:
             - Path=/grid/**
+        - id: chat-service
+          uri: lb://chat-service
+          predicates:
+            - Path=/chat/**
 
 nep:
   jwt:
@@ -29,7 +45,7 @@ nep:
     tokenTTL: 30m
   auth:
     excludePaths: # exclude paths unified config
-        - /user/login
-        - /user/login/phone
-        - /user/register
-        - /user/sendSMSCode
+      - /user/login
+      - /user/login/phone
+      - /user/register
+      - /user/sendSMSCode

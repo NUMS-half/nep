@@ -1,5 +1,6 @@
 package com.neusoft.neu24.user.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -70,7 +71,7 @@ public interface IUserService extends IService<User> {
      * @param phone 手机号
      * @return 发送是否成功
      */
-    HttpResponseEntity<Boolean> sendSMSCode(String phone);
+    HttpResponseEntity<Object> sendSMSCode(String phone);
 
     /**
      * 手机号登录/注册
@@ -80,4 +81,28 @@ public interface IUserService extends IService<User> {
      * @return 登录/注册是否成功
      */
     HttpResponseEntity<User> loginByPhone(String phone, String smsCode);
+
+    /**
+     * 分页查询
+     * @param map
+     * @param current
+     * @param size
+     * @return
+     */
+    HttpResponseEntity<IPage<User>> selectUserByPage(User user, long current, long size);
+
+    /**
+     * 修改用户状态
+     * @param user
+     * @return
+     */
+    HttpResponseEntity<Boolean> changeStatus(User user, Integer status);
+
+    /**
+     * 删除用户
+     * @param user
+     * @return
+     */
+    HttpResponseEntity<Boolean> deleteUser(User user);
+
 }

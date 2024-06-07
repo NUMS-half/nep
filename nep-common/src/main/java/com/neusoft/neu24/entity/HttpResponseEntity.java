@@ -59,6 +59,9 @@ public class HttpResponseEntity<T> {
     // 指派
     public static final HttpResponseEntity<Boolean> ASSIGN_FAIL = new HttpResponseEntity<>(ResponseEnum.ASSIGN_FAIL, null);
 
+    // 消息
+    public static final HttpResponseEntity<String> CONTENT_NULL = new HttpResponseEntity<>(ResponseEnum.CONTENT_NULL, null);
+
     /**
      * 请求失败
      *
@@ -74,7 +77,7 @@ public class HttpResponseEntity<T> {
      * @return 无权限访问的响应实体
      */
     public HttpResponseEntity<String> unauthorized(String msg, String detail) {
-        return new HttpResponseEntity<>(300, msg, detail);
+        return new HttpResponseEntity<>(401, msg, detail);
     }
 
     public HttpResponseEntity(ResponseEnum response, T data) {

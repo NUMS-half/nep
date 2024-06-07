@@ -27,7 +27,7 @@ public enum ResponseEnum {
     RESULT_IS_NULL(204, "查询结束，结果为空"),
 
     LOGIN_CONTENT_IS_NULL(300, "用户名或密码不能为空"),
-    REGISTER_FAIL(301, "用户名已存在，或输入不合法"),
+    REGISTER_FAIL(301, "注册失败：用户名/手机号已被注册或输入不合法"),
     LOGIN_FAIL(303, "用户名或密码错误"),
     UPDATE_FAIL(302, "信息修改失败，请检查输入"),
     ADD_FAIL(304, "信息新增失败，请检查输入"),
@@ -35,10 +35,13 @@ public enum ResponseEnum {
     PHONE_INVALID(306, "手机号码不合法"),
     SMS_CODE_ERROR(307, "验证码错误或验证码过期"),
     STATE_INVALID(308, "状态码不合法"),
+    CONTENT_NULL(309, "内容不能为空"),
+    USER_NOT_EXIST(310, "用户已销户，请重新注册"),
+    DELETE_FAIL(311, "删除失败"),
 
     BAD_REQUEST(400, "请求失败"),
     UNAUTHORIZED(401, "未授权的请求，请登录后重试"),
-    FORBIDDEN(403, "资源不允许被访问"),
+    FORBIDDEN(403, "抱歉，您无权访问本系统"),
     NOT_FOUND(404, "访问的资源不存在"),
 
     SERVICE_UNAVAILABLE(503, "服务不可用"),

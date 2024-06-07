@@ -18,7 +18,7 @@
         <module>statistics-service</module>
         <module>MyCodeGenerator</module>
         <module>grid-service</module>
-        <module>ai-service</module>
+        <module>chat-service</module>
     </modules>
 
     <parent>

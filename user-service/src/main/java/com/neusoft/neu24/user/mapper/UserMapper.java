@@ -6,6 +6,7 @@ import com.neusoft.neu24.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 /**
  *  Mapper 接口
@@ -22,7 +23,11 @@ public interface UserMapper extends BaseMapper<User> {
      * @param password 密码
      * @return 登陆是否成功
      */
-    @Select("select user_id from user where username = #{username} and password = #{password}")
+    @Select("SELECT user_id FROM user WHERE status <> -1 AND username = #{username} AND password = #{password}")
     String login(@Param("username") String username, @Param("password") String password);
+
+
+    @Update("UPDATE user SET status = #{status} WHERE user_id = #{userId}")
+    int updateStatus(@Param("userId") String userId, @Param("status") int status);
 
 }

@@ -63,6 +63,11 @@ public class User implements Serializable {
     private Integer roleId;
 
     /**
+     * 用户状态：0：禁用 1：启用 -1：删除
+     */
+    private Integer status;
+
+    /**
      * 用户头像地址
      */
     private String headPhotoLoc;

@@ -26,7 +26,12 @@ public interface UserMapper extends BaseMapper<User> {
     @Select("SELECT user_id FROM user WHERE status <> -1 AND username = #{username} AND password = #{password}")
     String login(@Param("username") String username, @Param("password") String password);
 
-
+    /**
+     * 更新用户状态
+     * @param userId 用户ID
+     * @param status 用户状态
+     * @return 更新是否成功
+     */
     @Update("UPDATE user SET status = #{status} WHERE user_id = #{userId}")
     int updateStatus(@Param("userId") String userId, @Param("status") int status);
 

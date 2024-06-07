@@ -33,19 +33,19 @@ public class Report implements Serializable {
     private String userId;
 
     /**
-     * 上报信息所属网格：省份ID
+     * 上报信息所属网格：省份编码
      */
-    private Integer provinceId;
+    private String provinceCode;
 
     /**
-     * 上报信息所属网格：市ID
+     * 上报信息所属网格：市编码
      */
-    private Integer cityId;
+    private String cityCode;
 
     /**
-     * 上报信息所属网格：区/县ID
+     * 上报信息所属网格：区/县编码
      */
-    private Integer townId;
+    private String townCode;
 
     /**
      * 上报信息的详细地址

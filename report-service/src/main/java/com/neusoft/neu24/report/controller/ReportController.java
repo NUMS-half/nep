@@ -114,13 +114,13 @@ public class ReportController {
                     report.setUserId((String) value);
                     break;
                 case "provinceId":
-                    report.setProvinceId((Integer) value);
+                    report.setProvinceCode((String) value);
                     break;
                 case "cityId":
-                    report.setCityId((Integer) value);
+                    report.setCityCode((String) value);
                     break;
                 case "townId":
-                    report.setTownId((Integer) value);
+                    report.setTownCode((String) value);
                     break;
                 case "address":
                     report.setAddress((String) value);

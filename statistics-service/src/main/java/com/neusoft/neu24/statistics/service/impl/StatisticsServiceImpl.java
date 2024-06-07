@@ -97,9 +97,9 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         if ( statistics != null ) {
             Map<String, Object> params = new HashMap<>();
             params.put("statistics_id", statistics.getStatisticsId());
-            params.put("province_id", statistics.getProvinceId());
-            params.put("city_id", statistics.getCityId());
-            params.put("town_id", statistics.getTownId());
+            params.put("province_code", statistics.getProvinceCode());
+            params.put("city_code", statistics.getCityCode());
+            params.put("town_code", statistics.getTownCode());
             params.put("address", statistics.getAddress());
             params.put("aqi_id", statistics.getAqiId());
             params.put("confirm_time", statistics.getConfirmTime());

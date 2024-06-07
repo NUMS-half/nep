@@ -143,9 +143,9 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             Map<String, Object> params = new HashMap<>();
             params.put("report_id", report.getReportId());
             params.put("user_id", report.getUserId());
-            params.put("province_id", report.getProvinceId());
-            params.put("city_id", report.getCityId());
-            params.put("town_id", report.getTownId());
+            params.put("province_code", report.getProvinceCode());
+            params.put("city_code", report.getCityCode());
+            params.put("town_code", report.getTownCode());
             params.put("address", report.getAddress());
             params.put("information", report.getInformation());
             params.put("estimated_level", report.getEstimatedLevel());

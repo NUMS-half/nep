@@ -236,14 +236,14 @@ public class UserController {
                 case "headPhotoLoc":
                     user.setHeadPhotoLoc((String) value);
                     break;
-                case "gmProvinceId":
-                    user.setGmProvinceId((Integer) value);
+                case "gmProvinceCode":
+                    user.setGmProvinceCode((String) value);
                     break;
-                case "gmCityId":
-                    user.setGmCityId((Integer) value);
+                case "gmCityCode":
+                    user.setGmCityCode((String) value);
                     break;
-                case "gmTownId":
-                    user.setGmTownId((Integer) value);
+                case "gmTownCode":
+                    user.setGmTownCode((String) value);
                     break;
                 case "gmState":
                     user.setGmState((Integer) value);

@@ -73,19 +73,19 @@ public class User implements Serializable {
     private String headPhotoLoc;
 
     /**
-     * 网格员所属网格区域的省ID
+     * 网格员所属网格区域的省编码
      */
-    private Integer gmProvinceId;
+    private String gmProvinceCode;
 
     /**
-     * 网格员所属网格区域的市ID
+     * 网格员所属网格区域的市编码
      */
-    private Integer gmCityId;
+    private String gmCityCode;
 
     /**
-     * 网格员所属网格区域的区ID
+     * 网格员所属网格区域的区编码
      */
-    private Integer gmTownId;
+    private String gmTownCode;
 
     /**
      * 网格员当前状态：	0：空闲	1：指派工作中	2：休假	3：其他

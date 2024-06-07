@@ -44,6 +44,11 @@ public class StatisticsController {
         }
     }
 
+    /**
+     * <b>根据ID查询统计信息<b/>
+     * @param statisticsId 统计信息ID
+     * @return 查询结果
+     */
     @GetMapping(value = "/select/{statisticsId}")
     public HttpResponseEntity<Statistics> selectStatisticsById(@PathVariable("statisticsId") String statisticsId) {
         return statisticsService.selectStatisticsById(statisticsId);

@@ -19,7 +19,6 @@ import com.neusoft.neu24.user.utils.RegexUtils;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.HttpResponse;
-import org.apache.http.util.EntityUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -200,10 +199,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     /**
-     * @param user
-     * @param current
-     * @param size
-     * @return
+     * 条件分页查询用户信息
+     * @param user 查询条件
+     * @param current 当前页
+     * @param size 每页数据条数
+     * @return 分页查询结果
      */
     @Override
     public HttpResponseEntity<IPage<User>> selectUserByPage(User user, long current, long size) {
@@ -227,8 +227,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     /**
      * 修改用户状态
      *
-     * @param user
-     * @return
+     * @param user  用户信息
+     * @param status 用户状态
+     * @return 是否修改成功
      */
     @Override
     public HttpResponseEntity<Boolean> changeStatus(User user, Integer status) {
@@ -246,8 +247,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     /**
      * 删除用户
      *
-     * @param user
-     * @return
+     * @param user 用户信息
+     * @return 是否删除成功
      */
     @Override
     public HttpResponseEntity<Boolean> deleteUser(User user) {
@@ -371,14 +372,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             try {
                 // 查询条件
                 QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-                if ( gridManager.getGmProvinceId() != null ) {
-                    queryWrapper.eq("gm_province_id", gridManager.getGmProvinceId());
+                if ( gridManager.getGmProvinceCode() != null ) {
+                    queryWrapper.eq("gm_province_code", gridManager.getGmProvinceCode());
                 }
-                if ( gridManager.getGmCityId() != null ) {
-                    queryWrapper.eq("gm_city_id", gridManager.getGmCityId());
+                if ( gridManager.getGmCityCode() != null ) {
+                    queryWrapper.eq("gm_city_code", gridManager.getGmCityCode());
                 }
-                if ( gridManager.getGmTownId() != null ) {
-                    queryWrapper.eq("gm_town_id", gridManager.getGmTownId());
+                if ( gridManager.getGmTownCode() != null ) {
+                    queryWrapper.eq("gm_town_code", gridManager.getGmTownCode());
                 }
                 queryWrapper.eq("role_id", 2).ne("status", -1);
                 List<User> gridManagers = userMapper.selectList(queryWrapper);
@@ -405,7 +406,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 创建用户
         User user = new User();
         user.setTelephone(phone);
-        user.setUsername("nep_usr_" + RandomUtil.randomString(8));
+        user.setUsername("nep_" + RandomUtil.randomString(8));
         user.setRealName("未设置");
         user.setPassword("00000000");
         user.setBirthday("2000-01-01");
@@ -431,9 +432,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         map.put("roleId", toStringOrNull(user.getRoleId()));
         map.put("status", toStringOrNull(user.getStatus()));
         map.put("headPhotoLoc", user.getHeadPhotoLoc());
-        map.put("gmProvinceId", toStringOrNull(user.getGmProvinceId()));
-        map.put("gmCityId", toStringOrNull(user.getGmCityId()));
-        map.put("gmTownId", toStringOrNull(user.getGmTownId()));
+        map.put("gmProvinceCode", user.getGmProvinceCode());
+        map.put("gmCityCode", user.getGmCityCode());
+        map.put("gmTownCode", user.getGmTownCode());
         map.put("gmState", toStringOrNull(user.getGmState()));
         map.put("remarks", user.getRemarks());
         map.put("token", user.getToken());

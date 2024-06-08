@@ -13,3 +13,10 @@ spring:
   mvc:
     async:
       request-timeout: -1
+
+nep:
+  jwt:
+    location: classpath:nep.jks
+    alias: nanhu
+    password: neu123456
+    tokenTTL: 30m

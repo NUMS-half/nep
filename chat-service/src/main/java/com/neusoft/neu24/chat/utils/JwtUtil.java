@@ -1,4 +1,4 @@
-package com.neusoft.neu24.user.utils;
+package com.neusoft.neu24.chat.utils;
 
 import cn.hutool.core.exceptions.ValidateException;
 import cn.hutool.jwt.JWT;

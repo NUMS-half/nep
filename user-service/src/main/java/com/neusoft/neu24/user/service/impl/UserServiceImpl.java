@@ -182,6 +182,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 用户不存在，则立即创建用户，进行注册
         if ( user == null ) {
             user = registerUserByPhone(phone);
+            if ( user == null ) {
+                return HttpResponseEntity.REGISTER_FAIL;
+            }
         }
 
         // 4. 保存用户信息到Redis中
@@ -200,9 +203,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     /**
      * 条件分页查询用户信息
-     * @param user 查询条件
+     *
+     * @param user    查询条件
      * @param current 当前页
-     * @param size 每页数据条数
+     * @param size    每页数据条数
      * @return 分页查询结果
      */
     @Override
@@ -227,7 +231,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     /**
      * 修改用户状态
      *
-     * @param user  用户信息
+     * @param user   用户信息
      * @param status 用户状态
      * @return 是否修改成功
      */
@@ -406,6 +410,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 创建用户
         User user = new User();
         user.setTelephone(phone);
+        // 用户手机注册时的默认信息
         user.setUsername("nep_" + RandomUtil.randomString(8));
         user.setRealName("未设置");
         user.setPassword("00000000");
@@ -415,10 +420,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         user.setStatus(1);
 
         // 保存用户
-        userMapper.insert(user);
-        return user;
+        return userMapper.insert(user) == 0 ? null : user;
     }
 
+    /**
+     * 将User对象转换为Map
+     */
     private Map<String, Object> convertUserToMap(User user) {
         Map<String, Object> map = new HashMap<>();
 

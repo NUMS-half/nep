@@ -11,4 +11,6 @@ public class RedisConstants {
 
     public static final Long LOGIN_SMS_TTL = 2L;
 
+    public static final String CHAT_HISTORY = "nep:chat:history:";
+
 }

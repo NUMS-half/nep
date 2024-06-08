@@ -56,7 +56,7 @@ public class ReportController {
         String reportId = (String) map.get("reportId");
         String gmUserId = (String) map.get("gmUserId");
 
-        // 设置网格员
+        // 指派网格员
         return reportService.assignGridManager(reportId, gmUserId);
     }
 
@@ -83,7 +83,7 @@ public class ReportController {
     public HttpResponseEntity<IPage<Report>> selectReportByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
 
         try {
-            if ( map == null ) {
+            if ( map == null || map.isEmpty() ) {
                 return reportService.selectReportByPage(null, current, size);
             } else {
                 Report report = mapToReport(map);

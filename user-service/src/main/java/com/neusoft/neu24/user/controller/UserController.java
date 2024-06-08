@@ -119,7 +119,6 @@ public class UserController {
             return userService.selectUserByPage(null, current, size);
         } else {
             User user = mapToUser(map);
-
             return userService.selectUserByPage(user, current, size);
         }
         } catch ( Exception e ) {

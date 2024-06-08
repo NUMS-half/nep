@@ -1,5 +1,11 @@
 package com.neusoft.neu24.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import lombok.Data;
 
 import java.io.Serial;
@@ -15,7 +21,6 @@ import java.time.LocalDateTime;
  * @since 2024-05-21
  */
 @Data
-
 public class Message implements Serializable {
 
     @Serial
@@ -24,6 +29,7 @@ public class Message implements Serializable {
     /**
      * 消息唯一标识UUID
      */
+    @TableId(value = "message_id")
     private String messageId;
 
     /**
@@ -39,6 +45,10 @@ public class Message implements Serializable {
     /**
      * 消息发送时间
      */
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime sendTime;
 
     /**

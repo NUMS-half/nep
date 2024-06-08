@@ -199,6 +199,12 @@
             <artifactId>feign-okhttp</artifactId>
         </dependency>
 
+        <!-- 引入fastjson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

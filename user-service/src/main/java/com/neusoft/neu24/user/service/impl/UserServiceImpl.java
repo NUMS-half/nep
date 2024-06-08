@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.neusoft.neu24.component.MQManager;
+import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.ResponseEnum;
 import com.neusoft.neu24.user.config.JwtProperties;
 import com.neusoft.neu24.entity.HttpResponseEntity;
@@ -47,6 +49,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Resource
     StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    MQManager<Report> mqManager;
 
     private final JwtUtil jwtUtil;
 
@@ -279,9 +284,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         try {
             user.setStatus(1);
             // 插入用户信息
-            return userMapper.insert(user) != 0 ?
-                    new HttpResponseEntity<User>().success(user) :
-                    HttpResponseEntity.REGISTER_FAIL;
+            if ( userMapper.insert(user) != 0 ) {
+                if ( user.getRoleId() == 2 ) {
+                    // 网格员注册成功后创建消息队列
+                    mqManager.createQueueIfNotExists(Report.class, user.getUserId());
+                }
+                return new HttpResponseEntity<User>().success(user);
+            } else {
+                return HttpResponseEntity.REGISTER_FAIL;
+            }
         } catch ( DataAccessException e ) {
             return HttpResponseEntity.REGISTER_FAIL;
         } catch ( Exception e ) {

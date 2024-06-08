@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.neusoft.neu24.client.UserClient;
+import com.neusoft.neu24.component.MQProducer;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.User;
@@ -33,6 +34,9 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
 
     @Resource
     private ReportMapper reportMapper;
+
+    @Resource
+    MQProducer<Report> mqProducer;
 
     /**
      * 用户服务客户端(由动态代理注入)
@@ -89,15 +93,31 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
 
         Map<String, Object> map = Map.of("userId", gridManagerId);
         try {
-            HttpResponseEntity<User> res = userClient.selectUser(map);
-            if ( res.getCode() != 200 ) {
+            // 1. 查询网格员信息
+            HttpResponseEntity<User> gridManager = userClient.selectUser(map);
+            if ( gridManager.getCode() != 200 ) {
+                // 2. 网格员不存在，指派失败
                 return HttpResponseEntity.ASSIGN_FAIL;
             }
+
+            // 3. 查询已经存在的反馈信息
             Report report = reportMapper.selectById(reportId);
+            // 如果反馈信息不存在或已经指派，则指派失败
+            if ( report == null || report.getState() != 0 ) {
+                return HttpResponseEntity.ASSIGN_FAIL;
+            }
             report.setGmUserId(gridManagerId);
             report.setAssignTime(LocalDateTimeUtil.now());
             report.setState(1);
-            return updateReport(report);
+
+            // 4. 更新反馈信息
+            if ( reportMapper.updateById(report) != 0 ) {
+                // 5. 更新成功，则发送消息到消息队列
+                mqProducer.sendToReportQueue(gridManagerId, Report.class, report);
+                return new HttpResponseEntity<Boolean>().success(true);
+            } else {
+                return HttpResponseEntity.ASSIGN_FAIL;
+            }
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
@@ -184,7 +204,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
                 return new HttpResponseEntity<Boolean>().resultIsNull(null);
             }
             report.setState(state);
-            return reportMapper.updateState(report.getState(),report.getReportId()) != 0 ?
+            return reportMapper.updateState(report.getState(), report.getReportId()) != 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
                     HttpResponseEntity.UPDATE_FAIL;
         } catch ( Exception e ) {

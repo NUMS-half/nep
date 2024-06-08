@@ -15,8 +15,6 @@ public class MQConsumer<T> {
 
     /**
      * 接收消息队列中的消息,并以队列形式返回
-     *
-     * @param queueName 待处理上报queue的名称
      */
     public Queue<T> getReportsFromQueue(Class<T> t, String routingKey) {
         String queueName = t.getName() + "@" + routingKey;

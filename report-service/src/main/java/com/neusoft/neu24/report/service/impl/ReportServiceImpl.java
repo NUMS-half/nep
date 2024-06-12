@@ -116,7 +116,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             report.setAssignTime(LocalDateTimeUtil.now());
             report.setState(1);
 
-            // 4. 更新反馈信息
+            // 4. 更新反馈信息为已指派
             if ( reportMapper.updateById(report) != 0 ) {
                 // 5. 指派成功，则发送消息到消息队列
                 rabbitTemplate.convertAndSend("user.exchange", "notification." + gridManagerId, report);

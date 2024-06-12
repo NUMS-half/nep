@@ -1,2 +1,11 @@
 server:
   port: 8086 # notification-service port
+
+nep:
+  rabbitmq:
+    simple:
+      ack-mode: manual
+
+logging:
+  level:
+    root: info

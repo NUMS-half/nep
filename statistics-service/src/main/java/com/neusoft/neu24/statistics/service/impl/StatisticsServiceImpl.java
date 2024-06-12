@@ -1,11 +1,8 @@
 package com.neusoft.neu24.statistics.service.impl;
 
-import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.neusoft.neu24.client.ReportClient;
-import com.neusoft.neu24.component.MQProducer;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
 import com.neusoft.neu24.statistics.mapper.StatisticsMapper;

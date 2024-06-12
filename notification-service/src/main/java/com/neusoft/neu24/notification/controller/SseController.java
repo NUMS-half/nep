@@ -1,13 +1,14 @@
 package com.neusoft.neu24.notification.controller;
 
-import jakarta.annotation.Resource;
+import com.rabbitmq.client.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.rabbit.annotation.*;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
-import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.RabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,18 +16,17 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/sse")
-public class SseController implements RabbitListenerConfigurer {
+public class SseController {
 
-    @Resource
-    private RabbitListenerEndpointRegistry registry;
+    // 日志记录器
+    private static final Logger logger = LoggerFactory.getLogger(SseController.class);
 
-    @Resource
-    private RabbitListenerContainerFactory<?> rabbitListenerContainerFactory;
-
+    // SseEmitter集合
     private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
 
@@ -41,24 +41,19 @@ public class SseController implements RabbitListenerConfigurer {
         SseEmitter emitter = new SseEmitter(0L); // no timeout
         emitters.put(userId, emitter);
 
-        System.out.println("Connect established: User " + userId + " setup");
-
-        startListening(userId);
+        logger.info("Connect established: User {} setup.", userId);
 
         emitter.onCompletion(() -> {
             emitters.remove(userId);
-            stopListening(userId);
-            System.out.println("Connect closed: User " + userId + " 【Completion】");
+            logger.info("Connect closed by completion: User {}.", userId);
         });
         emitter.onTimeout(() -> {
             emitters.remove(userId);
-            stopListening(userId);
-            System.out.println("Connect timeout: User " + userId + " 【Timeout】");
+            logger.info("Connect closed by timeout: User {}.", userId);
         });
         emitter.onError(e -> {
             emitters.remove(userId);
-            stopListening(userId);
-            System.out.println("Connect error: User " + userId + " 【error】");
+            logger.error("Connect error by error : User {}.", userId);
         });
 
         return emitter;
@@ -70,66 +65,43 @@ public class SseController implements RabbitListenerConfigurer {
     @GetMapping(value = "/close/{userId}", produces = {MediaType.TEXT_EVENT_STREAM_VALUE})
     public void close(@PathVariable("userId") String userId) {
         emitters.remove(userId);
-        stopListening(userId);
-        System.out.println("User Connect closed: " + userId);
+        logger.info("User {} Connect closed.", userId);
     }
 
-    /**
-     * 开始监听用户通知
-     * @param userId 用户ID
-     */
-    private void startListening(String userId) {
-        SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
-        endpoint.setId("listener-" + userId);
-        endpoint.setQueueNames("user.statistics.queue");
-        endpoint.setMessageListener(message -> {
-            String routingKey = message.getMessageProperties().getReceivedRoutingKey();
-            String userFromKey = routingKey.substring(routingKey.lastIndexOf('.') + 1);
-            if ( userId.equals(userFromKey) ) {
-                SseEmitter emitter = emitters.get(userId);
-                if ( emitter != null ) {
-                    try {
-                        emitter.send(SseEmitter.event().name("message").data(message, MediaType.APPLICATION_JSON));
-                    } catch ( IOException e ) {
-                        emitters.remove(userId);
-                    }
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "user.queue", durable = "true"),
+            exchange = @Exchange(name = "user.exchange", type = ExchangeTypes.TOPIC),
+            key = {"notification.#"}
+    ))
+    public void listenUserNotification(@Payload Map<String, Object> message,
+                                       @Header("amqp_receivedRoutingKey") String routingKey,
+                                       @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag,
+                                       Channel channel) {
+        // 获取routineKey中的用户ID
+        String userId = routingKey.substring(routingKey.lastIndexOf('.') + 1);
+        // 在emitters中查找对应ID的SseEmitter
+        SseEmitter emitter = emitters.get(userId);
+
+        if ( emitter != null ) {
+            try {
+                logger.info("Received message: {} from {}", message, routingKey);
+                emitter.send(SseEmitter.event().name("message").data(message, MediaType.APPLICATION_JSON));
+                channel.basicAck(deliveryTag, false); // 消息确认
+            } catch ( IOException e ) {
+                emitters.remove(userId);
+                try {
+                    channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
+                } catch ( IOException ioException ) {
+                    logger.error("Failed to Nack message", ioException);
                 }
             }
-        });
-        registry.registerListenerContainer(endpoint, rabbitListenerContainerFactory, true);
+        } else {
+            try {
+                channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
+            } catch ( IOException e ) {
+                logger.error("Failed to Nack message", e);
+            }
+        }
+
     }
-
-    /**
-     * 停止监听用户通知
-     * @param userId 用户ID
-     */
-    private void stopListening(String userId) {
-        MessageListenerContainer container = registry.getListenerContainer("listener-" + userId);
-        container.stop();
-        registry.unregisterListenerContainer("listener-" + userId);
-    }
-
-    @Override
-    public void configureRabbitListeners(RabbitListenerEndpointRegistrar registrar) {
-        // This can be left empty if not using default listeners
-    }
-
-//    @RabbitListener(bindings = @QueueBinding(
-//            value = @Queue(name = "user.queue", durable = "true"),
-//            exchange = @Exchange(name = "user.exchange", type = ExchangeTypes.TOPIC),
-//            key = "" + userList.stream().iterator()
-//    ))
-//    public void listenUserNotification(Map<String, Object> message, @Header("amqp_receivedRoutingKey") String routingKey) {
-//        System.out.println("Received message: " + message + " from " + routingKey);
-//        String userId = routingKey.substring(routingKey.lastIndexOf('.') + 1);
-//        SseEmitter emitter = emitters.get(userId);
-//        if ( emitter != null ) {
-//            try {
-//                emitter.send(SseEmitter.event().name("message").data(message, MediaType.APPLICATION_JSON));
-//            } catch ( IOException e ) {
-//                emitters.remove(userId);
-//            }
-//        }
-//    }
-
 }

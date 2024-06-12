@@ -15,6 +15,10 @@ public class ReportStateListener {
     @Resource
     private IReportService reportService;
 
+    /**
+     * 监听统计信息保存成功的消息，对上报信息进行状态更新
+     * @param reportId 上报信息ID
+     */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "statistics.save.queue", durable = "true"),
             exchange = @Exchange(name = "statistics.exchange", type = ExchangeTypes.TOPIC),

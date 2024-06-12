@@ -1,6 +1,7 @@
 package com.neusoft.neu24.report.controller;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
@@ -35,7 +36,7 @@ public class ReportController {
      */
     @PostMapping(value = "/add", headers = "Accept=application/json")
     public HttpResponseEntity<Report> addReport(@RequestBody Map<String, Object> map) {
-        Report report = mapToReport(map);
+        Report report = BeanUtil.fillBeanWithMap(map, new Report(), false);
         report.setProvinceCode(report.getProvinceCode() + "0000");
         report.setCityCode(report.getCityCode() + "00");
         report.setReportTime(LocalDateTime.now());
@@ -86,7 +87,7 @@ public class ReportController {
             if ( map == null || map.isEmpty() ) {
                 return reportService.selectReportByPage(null, current, size);
             } else {
-                Report report = mapToReport(map);
+                Report report = BeanUtil.fillBeanWithMap(map,new Report(), false);
                 return reportService.selectReportByPage(report, current, size);
             }
         } catch ( Exception e ) {
@@ -103,53 +104,6 @@ public class ReportController {
     @PostMapping("/state")
     public HttpResponseEntity<Boolean> setReportState(@RequestParam("reportId") String reportId ,@RequestParam("state") Integer state) {
         return reportService.setReportState(reportId,state);
-    }
-
-    private Report mapToReport(Map<String, Object> map) {
-        Report report = new Report();
-        map.forEach((key, value) -> {
-            switch ( key ) {
-                case "reportId":
-                    report.setReportId((String) value);
-                    break;
-                case "userId":
-                    report.setUserId((String) value);
-                    break;
-                case "provinceId":
-                    report.setProvinceCode((String) value);
-                    break;
-                case "cityId":
-                    report.setCityCode((String) value);
-                    break;
-                case "townId":
-                    report.setTownCode((String) value);
-                    break;
-                case "address":
-                    report.setAddress((String) value);
-                    break;
-                case "information":
-                    report.setInformation((String) value);
-                    break;
-                case "estimatedLevel":
-                    report.setEstimatedLevel((Integer) value);
-                    break;
-                case "reportTime":
-                    report.setReportTime((LocalDateTime) value);
-                    break;
-                case "gmUserId":
-                    report.setGmUserId((String) value);
-                    break;
-                case "assignTime":
-                    report.setAssignTime((LocalDateTime) value);
-                    break;
-                case "state":
-                    report.setState((Integer) value);
-                    break;
-                default:
-                    break;
-            }
-        });
-        return report;
     }
 }
 

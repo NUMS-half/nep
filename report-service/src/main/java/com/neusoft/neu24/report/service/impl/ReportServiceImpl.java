@@ -14,6 +14,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.report.service.IReportService;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +39,9 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
     @Resource
     MQProducer<Report> mqProducer;
 
+    @Resource
+    RabbitTemplate rabbitTemplate;
+
     /**
      * 用户服务客户端(由动态代理注入)
      */
@@ -52,9 +56,11 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
     @Override
     public HttpResponseEntity<Report> addReport(Report report) {
         try {
-            return reportMapper.insert(report) != 0 ?
-                    new HttpResponseEntity<Report>().success(report) :
-                    new HttpResponseEntity<Report>().addFail(null);
+            if( reportMapper.insert(report) != 0 ) {
+                return new HttpResponseEntity<Report>().success(report);
+            } else {
+                return new HttpResponseEntity<Report>().addFail(null);
+            }
         } catch ( DataAccessException e ) {
             return new HttpResponseEntity<Report>().addFail(null);
         } catch ( Exception e ) {
@@ -112,8 +118,8 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
 
             // 4. 更新反馈信息
             if ( reportMapper.updateById(report) != 0 ) {
-                // 5. 更新成功，则发送消息到消息队列
-                mqProducer.sendToReportQueue(gridManagerId, Report.class, report);
+                // 5. 指派成功，则发送消息到消息队列
+                rabbitTemplate.convertAndSend("user.exchange", "notification." + gridManagerId, report);
                 return new HttpResponseEntity<Boolean>().success(true);
             } else {
                 return HttpResponseEntity.ASSIGN_FAIL;

@@ -1,6 +1,7 @@
 package com.neusoft.neu24.user.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
 import com.neusoft.neu24.user.config.UserProperties;
@@ -37,7 +38,7 @@ public class UserController {
      * @return 登录校验结果
      */
     @PostMapping("/login")
-    public HttpResponseEntity<User> login(@RequestBody Map<String, Object> loginInfo) {
+    public HttpResponseEntity<UserDTO> login(@RequestBody Map<String, Object> loginInfo) {
         // TODO 未完成, 限制用户最大登录失败次数
         System.out.println(userProperties.getLoginMaxTimes());
 
@@ -71,7 +72,7 @@ public class UserController {
      * @return 登录/注册结果
      */
     @PostMapping("/login/phone")
-    public HttpResponseEntity<User> loginByPhone(@RequestBody Map<String, Object> loginInfo) {
+    public HttpResponseEntity<UserDTO> loginByPhone(@RequestBody Map<String, Object> loginInfo) {
         // 解析前端请求的用户数据
         String phone = (String) loginInfo.get("phone");
         String smsCode = (String) loginInfo.get("smsCode");
@@ -86,7 +87,7 @@ public class UserController {
      * @return 注册结果
      */
     @PostMapping("/register")
-    public HttpResponseEntity<User> register(@RequestBody Map<String, Object> registerInfo) {
+    public HttpResponseEntity<UserDTO> register(@RequestBody Map<String, Object> registerInfo) {
         // 封装用户信息
         User user = mapToUser(registerInfo);
         // 注册

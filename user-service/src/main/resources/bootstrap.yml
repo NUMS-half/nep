@@ -17,4 +17,5 @@ spring:
         shared-configs:
           - data-id: shared-jdbc.yml # shared jdbc config file
           - data-id: shared-redis.yml
+          - data-id: shared-rabbitmq.yml
 

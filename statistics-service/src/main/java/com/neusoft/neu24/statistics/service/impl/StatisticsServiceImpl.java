@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.neusoft.neu24.client.ReportClient;
+import com.neusoft.neu24.component.MQProducer;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
 import com.neusoft.neu24.statistics.mapper.StatisticsMapper;
@@ -12,6 +13,8 @@ import com.neusoft.neu24.statistics.service.IStatisticsService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +34,8 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Resource
     private StatisticsMapper statisticsMapper;
 
-    private final ReportClient reportClient;
+    @Resource
+    RabbitTemplate rabbitTemplate;
 
     /**
      * <b>保存网格员测量的统计信息<b/>
@@ -42,20 +46,19 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Override
     public HttpResponseEntity<Statistics> saveStatistics(Statistics statistics) {
         try {
-            // 设置统计的确认时间
-            statistics.setConfirmTime(LocalDateTimeUtil.now());
             if ( statisticsMapper.insert(statistics) != 0 ) {
-                // 远程调用更新反馈的状态
-                if ( Boolean.TRUE.equals(reportClient.setReportState(statistics.getReportId(), 2).getData()) ) {
-                    return new HttpResponseEntity<Statistics>().success(statistics);
-                } else {
-                    return new HttpResponseEntity<Statistics>().serviceUnavailable(null);
-                }
+                // 1. 通知反馈服务更新反馈状态
+                rabbitTemplate.convertAndSend("statistics.exchange", "save.success", statistics.getReportId());
+                // 2. 上报信息更新成功，发送消息到公众监督员的消息队列
+                rabbitTemplate.convertAndSend("user.exchange", "notification." + statistics.getUserId(), statistics);
+                return new HttpResponseEntity<Statistics>().success(statistics);
             } else {
                 return new HttpResponseEntity<Statistics>().addFail(null);
             }
         } catch ( DataAccessException e ) {
             return new HttpResponseEntity<Statistics>().addFail(null);
+        } catch ( AmqpException e ) {
+            return new HttpResponseEntity<Statistics>().serviceUnavailable(null);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Statistics>().serverError(null);
         }

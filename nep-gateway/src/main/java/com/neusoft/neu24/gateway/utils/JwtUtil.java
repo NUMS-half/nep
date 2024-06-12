@@ -6,6 +6,7 @@ import cn.hutool.jwt.JWTValidator;
 import cn.hutool.jwt.signers.JWTSigner;
 import cn.hutool.jwt.signers.JWTSignerUtil;
 import com.neusoft.neu24.entity.HttpResponseEntity;
+import com.neusoft.neu24.entity.User;
 import org.springframework.stereotype.Component;
 
 import java.security.KeyPair;
@@ -27,14 +28,15 @@ public class JwtUtil {
     /**
      * 创建 access-token
      *
-     * @param userId 用户信息
-     * @param ttl token有效时间
+     * @param user 用户信息
+     * @param ttl    token有效时间
      * @return access-token
      */
-    public String createToken(String userId, Duration ttl) {
+    public String createToken(User user, Duration ttl) {
         // 1.生成jws
         return JWT.create()
-                .setPayload("user", userId)
+                .setPayload("userId", user.getUserId())
+                .setPayload("roleId", user.getRoleId())
                 .setExpiresAt(new Date(System.currentTimeMillis() + ttl.toMillis()))
                 .setSigner(jwtSigner)
                 .sign();
@@ -48,30 +50,30 @@ public class JwtUtil {
      */
     public HttpResponseEntity<String> parseToken(String token) {
         // 1.校验token是否为空
-        if (token == null) {
-            return new HttpResponseEntity<>().unauthorized("未登录",null);
+        if ( token == null ) {
+            return new HttpResponseEntity<>().unauthorized("未登录", null);
         }
         // 2.校验并解析jwt
         JWT jwt;
         try {
             jwt = JWT.of(token).setSigner(jwtSigner);
-        } catch (Exception e) {
+        } catch ( Exception e ) {
             return new HttpResponseEntity<>().unauthorized("无效的token", e.getMessage());
         }
         // 2.校验jwt是否有效
-        if (!jwt.verify()) {
+        if ( !jwt.verify() ) {
             // 验证失败
             return new HttpResponseEntity<>().unauthorized("无效的token", null);
         }
         // 3.校验是否过期
         try {
             JWTValidator.of(jwt).validateDate();
-        } catch ( ValidateException e) {
+        } catch ( ValidateException e ) {
             return new HttpResponseEntity<>().unauthorized("token已经过期", e.getMessage());
         }
         // 4.数据格式校验
-        Object userPayload = jwt.getPayload("user");
-        if (userPayload == null) {
+        Object userPayload = jwt.getPayload("userId");
+        if ( userPayload == null ) {
             // 数据为空
             return new HttpResponseEntity<>().unauthorized("无效的token", null);
         }
@@ -79,28 +81,31 @@ public class JwtUtil {
         // 5.数据解析
         try {
             return new HttpResponseEntity<String>().success(String.valueOf(userPayload.toString()));
-        } catch (RuntimeException e) {
+        } catch ( RuntimeException e ) {
             // 数据格式有误
             return new HttpResponseEntity<>().unauthorized("无效的token", null);
         }
     }
 
     /**
-     * 刷新token有效期
+     * 通过token获取userId
      *
-     * @param token 旧的token
-     * @param ttl 新的token有效时间
-     * @return 新的token
+     * @param token token
+     * @return userId
      */
-    public String refreshToken(String token, Duration ttl) {
-        // 1.解析旧token
+    public String getUserIdByToken(String token) {
         JWT jwt = JWT.of(token).setSigner(jwtSigner);
-
-        // 2.获取用户信息
-        String userId = (String) jwt.getPayload("user");
-
-        // 3.创建新token
-        return createToken(userId, ttl);
+        return (String) jwt.getPayload("userId");
     }
 
+    /**
+     * 通过token获取roleId
+     *
+     * @param token token
+     * @return roleId
+     */
+    public String getRoleIdByToken(String token) {
+        JWT jwt = JWT.of(token).setSigner(jwtSigner);
+        return (String) jwt.getPayload("roleId");
+    }
 }

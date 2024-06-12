@@ -21,7 +21,7 @@ public class MQProducer<T> {
      * @param routingKey 队列名称
      * @param message    消息
      */
-    public void sendToReportQueue(String routingKey, Class<T> t, T message) {
+    public void sendToMessageQueue(String routingKey, Class<T> t, T message) {
         amqpTemplate.convertAndSend(t.getName() + "@" + routingKey, message);
     }
 }

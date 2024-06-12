@@ -19,6 +19,7 @@
         <module>grid-service</module>
         <module>chat-service</module>
         <module>role-service</module>
+        <module>notification-service</module>
     </modules>
 
     <parent>

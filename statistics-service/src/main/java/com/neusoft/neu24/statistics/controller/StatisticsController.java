@@ -2,6 +2,7 @@ package com.neusoft.neu24.statistics.controller;
 
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
@@ -38,6 +39,8 @@ public class StatisticsController {
         try {
             // 将Map转换为Statistics对象
             Statistics statistics = BeanUtil.fillBeanWithMap(map, new Statistics(), false);
+            // 设置统计的确认时间
+            statistics.setConfirmTime(LocalDateTimeUtil.now());
             return statisticsService.saveStatistics(statistics);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Statistics>().serverError(null);

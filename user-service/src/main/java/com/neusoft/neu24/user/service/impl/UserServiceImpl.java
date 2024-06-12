@@ -7,12 +7,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.neusoft.neu24.component.MQConsumer;
 import com.neusoft.neu24.component.MQManager;
-import com.neusoft.neu24.entity.Report;
-import com.neusoft.neu24.entity.ResponseEnum;
+import com.neusoft.neu24.entity.*;
+import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.user.config.JwtProperties;
-import com.neusoft.neu24.entity.HttpResponseEntity;
-import com.neusoft.neu24.entity.User;
 import com.neusoft.neu24.user.mapper.UserMapper;
 import com.neusoft.neu24.user.service.IUserService;
 import com.neusoft.neu24.user.utils.HttpUtils;
@@ -25,17 +24,14 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.neusoft.neu24.config.RedisConstants.*;
 
 
 /**
- * 服务实现类
+ * 用户服务实现类
  *
  * @author Team-NEU-NanHu
  * @since 2024-05-21
@@ -51,7 +47,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     StringRedisTemplate stringRedisTemplate;
 
     @Resource
-    MQManager<Report> mqManager;
+    MQManager<Report> reportMqManager;
+
+    @Resource
+    MQManager<Statistics> statisticsMqManager;
+
+    @Resource
+    MQConsumer<Report> reportMqConsumer;
+
+    @Resource
+    MQConsumer<Statistics> statisticsMqConsumer;
 
     private final JwtUtil jwtUtil;
 
@@ -65,7 +70,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 登录结果
      */
     @Override
-    public HttpResponseEntity<User> login(String username, String password) {
+    public HttpResponseEntity<UserDTO> login(String username, String password) {
         // 判断用户名和密码是否为空
         if ( username == null || username.isEmpty() || password == null || password.isEmpty() ) {
             return HttpResponseEntity.LOGIN_CONTENT_IS_NULL;
@@ -80,27 +85,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                     return new HttpResponseEntity<>(ResponseEnum.USER_NOT_EXIST, null);
                 }
             }
-            // 验证用户是否存在
-            if ( user == null ) {
+            // 验证用户是否存在，且用户存在时验证密码是否正确
+            if ( user == null || !user.getPassword().equals(password) ) {
                 return HttpResponseEntity.LOGIN_FAIL;
             }
-            // 用户存在时验证密码是否正确
-            else {
-                if ( !user.getPassword().equals(password) ) {
-                    return HttpResponseEntity.LOGIN_FAIL;
-                }
-            }
-            user.setToken(jwtUtil.createToken(user.getUserId(), jwtProperties.getTokenTTL()));
-
-            // 保存用户信息到Redis缓存中
-            Map<String, Object> userMap = convertUserToMap(user);
-            stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
-            // 为Redis的数据设置与token一样的有效期
-            stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
-            // 登录成功,返回用户信息
-            return new HttpResponseEntity<User>().loginSuccess(user);
+            // 登录成功
+            return handleLogin(user);
         } catch ( Exception e ) {
-            return new HttpResponseEntity<User>().serverError(null);
+            return new HttpResponseEntity<UserDTO>().serverError(null);
         }
     }
 
@@ -140,10 +132,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         //smsSignId（短信前缀）和templateId（短信模板），可登录国阳云控制台自助申请。参考文档：http://help.guoyangyun.com/Problem/Qm.html
         querys.put("smsSignId", "2e65b1bb3d054466b82f0c9d125465e2");
         querys.put("templateId", "908e94ccf08b4476ba6c876d13f084ad");
-        Map<String, String> bodys = new HashMap<>();
+        Map<String, String> bodies = new HashMap<>();
 
         try {
-            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
+            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodies);
             // 5. 返回成功
             return new HttpResponseEntity<>().success(response.getStatusLine().getStatusCode());
         } catch ( Exception e ) {
@@ -160,7 +152,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 登录/注册是否成功
      */
     @Override
-    public HttpResponseEntity<User> loginByPhone(String phone, String smsCode) {
+    public HttpResponseEntity<UserDTO> loginByPhone(String phone, String smsCode) {
 
         // 1. 判断验证时手机号码是否合规
         if ( !RegexUtils.isPhoneInvalid(phone) ) {
@@ -191,19 +183,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 return HttpResponseEntity.REGISTER_FAIL;
             }
         }
-
-        // 4. 保存用户信息到Redis中
-        // 根据用户信息生成 Jwt Token
-        String token = jwtUtil.createToken(user.getUserId(), jwtProperties.getTokenTTL());
-        user.setToken(token);
-        // 将用户对象转为Hash存储
-        Map<String, Object> userMap = convertUserToMap(user);
-
-        stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
-        // 为Redis的数据设置与token一样的有效期
-        stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
-
-        return new HttpResponseEntity<User>().success(user);
+        // 登录成功 / 注册成功
+        return handleLogin(user);
     }
 
     /**
@@ -277,7 +258,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 是否注册成功
      */
     @Override
-    public HttpResponseEntity<User> register(User user) {
+    public HttpResponseEntity<UserDTO> register(User user) {
         if ( !RegexUtils.isPhoneInvalid(user.getTelephone()) ) {
             return new HttpResponseEntity<>(ResponseEnum.PHONE_INVALID, null);
         }
@@ -287,16 +268,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             if ( userMapper.insert(user) != 0 ) {
                 if ( user.getRoleId() == 2 ) {
                     // 网格员注册成功后创建消息队列
-                    mqManager.createQueueIfNotExists(Report.class, user.getUserId());
+                    reportMqManager.createQueueIfNotExists(Report.class, user.getUserId());
+                } else if ( user.getRoleId() == 1 ) {
+                    // 公众监督员注册成功后创建消息队列
+                    statisticsMqManager.createQueueIfNotExists(Statistics.class, user.getUserId());
                 }
-                return new HttpResponseEntity<User>().success(user);
+                return new HttpResponseEntity<UserDTO>().success(new UserDTO(user, null));
             } else {
                 return HttpResponseEntity.REGISTER_FAIL;
             }
         } catch ( DataAccessException e ) {
             return HttpResponseEntity.REGISTER_FAIL;
         } catch ( Exception e ) {
-            return new HttpResponseEntity<User>().serverError(null);
+            return new HttpResponseEntity<UserDTO>().serverError(null);
         }
     }
 
@@ -431,7 +415,51 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         user.setStatus(1);
 
         // 保存用户
-        return userMapper.insert(user) == 0 ? null : user;
+        if ( userMapper.insert(user) == 0 ) {
+            return null;
+        } else {
+            // 创建公众监督员消息队列
+            statisticsMqManager.createQueueIfNotExists(Statistics.class, user.getUserId());
+            return user;
+        }
+    }
+
+    /**
+     * 处理用户登录校验通过后的逻辑
+     * @param user 用户信息
+     * @return 登录成功后的响应
+     */
+    public HttpResponseEntity<UserDTO> handleLogin(User user) {
+        try {
+            // 登录校验通过后：
+            // 1. 生成Token
+            user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
+            // 2. 保存用户信息到Redis缓存中
+            Map<String, Object> userMap = convertUserToMap(user);
+            stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
+            // 3. 为Redis的数据设置与token一样的有效期
+            stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
+
+            // 4. 登录成功,根据用户身份返回用户信息
+
+            return switch ( user.getRoleId() ) {
+                case 1 -> {
+                    // 公众监督员登录成功后发送检测消息列表
+                    statisticsMqManager.createQueueIfNotExists(Statistics.class, user.getUserId()); // TODO 后面删掉
+                    List<Statistics> statisticsList = statisticsMqConsumer.getMessageFromQueue(Statistics.class, user.getUserId());
+                    yield new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user, new ArrayList<>(statisticsList)));
+                }
+                case 2 -> {
+                    // 网格员登录成功后发送上报消息列表
+                    reportMqManager.createQueueIfNotExists(Report.class, user.getUserId()); // TODO 后面删掉
+                    List<Report> reportList = reportMqConsumer.getMessageFromQueue(Report.class, user.getUserId());
+                    yield new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user, new ArrayList<>(reportList)));
+                }
+                default -> new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user, null));
+            };
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<UserDTO>().serverError(null);
+        }
     }
 
     /**

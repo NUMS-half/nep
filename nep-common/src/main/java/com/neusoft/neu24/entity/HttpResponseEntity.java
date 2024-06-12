@@ -1,5 +1,6 @@
 package com.neusoft.neu24.entity;
 
+import com.neusoft.neu24.dto.UserDTO;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -48,9 +49,9 @@ public class HttpResponseEntity<T> {
     }
 
     // 用户登录注册
-    public static final HttpResponseEntity<User> LOGIN_FAIL = new HttpResponseEntity<>(ResponseEnum.LOGIN_FAIL, null);
-    public static final HttpResponseEntity<User> LOGIN_CONTENT_IS_NULL = new HttpResponseEntity<>(ResponseEnum.LOGIN_CONTENT_IS_NULL, null);
-    public static final HttpResponseEntity<User> REGISTER_FAIL = new HttpResponseEntity<>(ResponseEnum.REGISTER_FAIL, null);
+    public static final HttpResponseEntity<UserDTO> LOGIN_FAIL = new HttpResponseEntity<>(ResponseEnum.LOGIN_FAIL, null);
+    public static final HttpResponseEntity<UserDTO> LOGIN_CONTENT_IS_NULL = new HttpResponseEntity<>(ResponseEnum.LOGIN_CONTENT_IS_NULL, null);
+    public static final HttpResponseEntity<UserDTO> REGISTER_FAIL = new HttpResponseEntity<>(ResponseEnum.REGISTER_FAIL, null);
 
     // 修改
     public static final HttpResponseEntity<Boolean> UPDATE_FAIL = new HttpResponseEntity<>(ResponseEnum.UPDATE_FAIL, null);

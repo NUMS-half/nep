@@ -1,6 +1,7 @@
 package com.neusoft.neu24.user.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -24,7 +25,7 @@ public interface IUserService extends IService<User> {
      * @param password 登录密码
      * @return 登录成功返回用户ID，失败返回null
      */
-    HttpResponseEntity<User> login(String username, String password);
+    HttpResponseEntity<UserDTO> login(String username, String password);
 
     /**
      * 完整信息用户注册业务
@@ -32,7 +33,7 @@ public interface IUserService extends IService<User> {
      * @param user 用户信息
      * @return 注册是否成功
      */
-    HttpResponseEntity<User> register(User user);
+    HttpResponseEntity<UserDTO> register(User user);
 
     /**
      * 更新用户信息业务
@@ -80,7 +81,7 @@ public interface IUserService extends IService<User> {
      * @param smsCode 短信验证码
      * @return 登录/注册是否成功
      */
-    HttpResponseEntity<User> loginByPhone(String phone, String smsCode);
+    HttpResponseEntity<UserDTO> loginByPhone(String phone, String smsCode);
 
     /**
      * 分页查询

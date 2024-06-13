@@ -253,7 +253,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             user.setStatus(1);
             // 插入用户信息
             if ( userMapper.insert(user) != 0 ) {
-                return new HttpResponseEntity<UserDTO>().success(new UserDTO(user, null));
+                return new HttpResponseEntity<UserDTO>().success(new UserDTO(user));
             } else {
                 return HttpResponseEntity.REGISTER_FAIL;
             }
@@ -419,7 +419,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
 
             // 4. 登录成功，返回用户信息
-            return new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user, null));
+            return new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user));
         } catch ( Exception e ) {
             return new HttpResponseEntity<UserDTO>().serverError(null);
         }

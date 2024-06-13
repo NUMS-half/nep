@@ -48,13 +48,17 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
         IPage<Role> page = new Page<>(current, size);
         IPage<Role> pages;
         LambdaQueryWrapper<Role> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.ne(Role::getState, -1);
         if ( role != null ) {
-            queryWrapper
-                    .like(Role::getRoleName, role.getRoleName())
-                    .or()
-                    .like(Role::getRemark, role.getRemark());
+            if ( role.getState() != null ) {
+                queryWrapper.eq(Role::getState, role.getState());
+            }
+            queryWrapper.and(wrapper -> {
+                wrapper.like(Role::getRoleName, role.getRoleName());
+                wrapper.or().like(Role::getRemark, role.getRemark());
+            });
         }
-        pages = roleMapper.selectPage(page, queryWrapper.ne(Role::getState, -1));
+        pages = getBaseMapper().selectPage(page, queryWrapper);
         return pages == null || pages.getTotal() == 0 ?
                 new HttpResponseEntity<IPage<Role>>().resultIsNull(null) :
                 new HttpResponseEntity<IPage<Role>>().success(pages);
@@ -107,8 +111,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
 
     /**
      * 修改角色状态
+     *
      * @param roleId 角色ID
-     * @param state 状态
+     * @param state  状态
      * @return 是否修改成功
      */
     @Override
@@ -147,10 +152,10 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
     }
 
     /**
-     * 查询角色权限列表
+     * 查询启用的角色的权限列表
      *
      * @param roleId 角色ID
-     * @return 角色权限列表
+     * @return 角色权限列表(子节点)
      */
     @Override
     public HttpResponseEntity<List<Integer>> selectSystemNodeById(Integer roleId) {
@@ -170,6 +175,17 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
      */
     @Override
     public HttpResponseEntity<Boolean> updateRoleAuth(Integer roleId, List<Integer> nodeIds) {
-        return null;
+        if ( roleId == null || nodeIds == null || nodeIds.isEmpty() ) {
+            return HttpResponseEntity.UPDATE_FAIL;
+        }
+        try {
+            return roleMapper.insertRoleAuth(roleId, nodeIds) > 0 ?
+                    new HttpResponseEntity<Boolean>().success(true) :
+                    HttpResponseEntity.UPDATE_FAIL;
+        } catch ( DataAccessException e ) {
+            return HttpResponseEntity.UPDATE_FAIL;
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
     }
 }

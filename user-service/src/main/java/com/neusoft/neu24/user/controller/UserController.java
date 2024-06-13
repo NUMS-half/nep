@@ -116,12 +116,12 @@ public class UserController {
     @PostMapping(value = "/select/page", headers = "Accept=application/json")
     public HttpResponseEntity<IPage<User>> selectUserByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
         try {
-        if ( map == null || map.isEmpty() ) {
-            return userService.selectUserByPage(null, current, size);
-        } else {
-            User user = mapToUser(map);
-            return userService.selectUserByPage(user, current, size);
-        }
+            if ( map == null || map.isEmpty() ) {
+                return userService.selectUserByPage(null, current, size);
+            } else {
+                User user = mapToUser(map);
+                return userService.selectUserByPage(user, current, size);
+            }
         } catch ( Exception e ) {
             return new HttpResponseEntity<IPage<User>>().serverError(null);
         }

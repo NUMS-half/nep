@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.neu24.role.mapper.SystemNodeMapper">
+
+    <!-- 递归查询系统节点子树 -->
+    <select id="selectSubtree" resultType="com.neusoft.neu24.entity.SystemNode">
+        WITH RECURSIVE subtree AS (SELECT *
+                                   FROM system_node
+                                   WHERE node_id = #{nodeId}
+                                   UNION ALL
+                                   SELECT sn.*
+                                   FROM system_node sn
+                                            INNER JOIN subtree s ON sn.pid = s.node_id)
+        SELECT *
+        FROM subtree;
+    </select>
+
+</mapper>

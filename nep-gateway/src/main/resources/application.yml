@@ -43,7 +43,7 @@ spring:
         - id: role-service
           uri: lb://role-service
           predicates:
-            - Path=/role/**
+            - Path=/role/**, /node/**
 
 
 nep:

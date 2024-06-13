@@ -21,5 +21,12 @@ public interface RoleMapper extends BaseMapper<Role> {
     @Update("UPDATE role SET state = #{state} WHERE role_id = #{roleId}")
     int updateState(@Param("roleId") Integer roleId, @Param("state") Integer state);
 
+    /**
+     * 查询启用的角色的权限(子节点)列表
+     * @param roleId 角色ID
+     * @return 角色权限列表
+     */
     List<Integer> selectSystemNodeById(@Param("roleId") Integer roleId);
+
+    int insertRoleAuth(@Param("roleId") Integer roleId, @Param("nodeIds") List<Integer> nodeIds);
 }

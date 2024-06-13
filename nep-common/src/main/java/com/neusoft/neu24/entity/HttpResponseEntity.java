@@ -57,6 +57,9 @@ public class HttpResponseEntity<T> {
     public static final HttpResponseEntity<Boolean> UPDATE_FAIL = new HttpResponseEntity<>(ResponseEnum.UPDATE_FAIL, null);
     public static final HttpResponseEntity<Boolean> STATE_INVALID = new HttpResponseEntity<>(ResponseEnum.STATE_INVALID, null);
 
+    // 删除
+    public static final HttpResponseEntity<Boolean> DELETE_FAIL = new HttpResponseEntity<>(ResponseEnum.DELETE_FAIL, null);
+
     // 指派
     public static final HttpResponseEntity<Boolean> ASSIGN_FAIL = new HttpResponseEntity<>(ResponseEnum.ASSIGN_FAIL, null);
 

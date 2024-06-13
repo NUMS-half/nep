@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.neusoft.neu24.client.UserClient;
-import com.neusoft.neu24.component.MQProducer;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.User;
@@ -35,9 +34,6 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
 
     @Resource
     private ReportMapper reportMapper;
-
-    @Resource
-    MQProducer<Report> mqProducer;
 
     @Resource
     RabbitTemplate rabbitTemplate;

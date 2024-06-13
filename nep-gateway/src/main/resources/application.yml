@@ -40,6 +40,11 @@ spring:
           uri: lb://notification-service
           predicates:
             - Path=/sse/**
+        - id: role-service
+          uri: lb://role-service
+          predicates:
+            - Path=/role/**
+
 
 nep:
   jwt:

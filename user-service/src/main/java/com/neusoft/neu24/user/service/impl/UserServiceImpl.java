@@ -7,8 +7,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.neusoft.neu24.component.MQConsumer;
-import com.neusoft.neu24.component.MQManager;
 import com.neusoft.neu24.entity.*;
 import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.user.config.JwtProperties;
@@ -45,18 +43,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Resource
     StringRedisTemplate stringRedisTemplate;
-
-    @Resource
-    MQManager<Report> reportMqManager;
-
-    @Resource
-    MQManager<Statistics> statisticsMqManager;
-
-    @Resource
-    MQConsumer<Report> reportMqConsumer;
-
-    @Resource
-    MQConsumer<Statistics> statisticsMqConsumer;
 
     private final JwtUtil jwtUtil;
 
@@ -118,29 +104,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 4. 通过第三方API发送验证码到手机
         System.out.println("验证码发送成功, 验证码为:{ " + smsCode + " }");
-        String host = "https://gyytz.market.alicloudapi.com";
-        String path = "/sms/smsSend";
-        String method = "POST";
-        String appcode = "01600dfa8a514d3bac819f016523b4a7";
-        Map<String, String> headers = new HashMap<>();
-        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
-        headers.put("Authorization", "APPCODE " + appcode);
-        Map<String, String> querys = new HashMap<>();
-        querys.put("mobile", phone);
-        querys.put("param", "**code**:" + smsCode + "**minute**:5");
-
-        //smsSignId（短信前缀）和templateId（短信模板），可登录国阳云控制台自助申请。参考文档：http://help.guoyangyun.com/Problem/Qm.html
-        querys.put("smsSignId", "2e65b1bb3d054466b82f0c9d125465e2");
-        querys.put("templateId", "908e94ccf08b4476ba6c876d13f084ad");
-        Map<String, String> bodies = new HashMap<>();
-
-        try {
-            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodies);
-            // 5. 返回成功
-            return new HttpResponseEntity<>().success(response.getStatusLine().getStatusCode());
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<>().serverError(null);
-        }
+//        String host = "https://gyytz.market.alicloudapi.com";
+//        String path = "/sms/smsSend";
+//        String method = "POST";
+//        String appcode = "01600dfa8a514d3bac819f016523b4a7";
+//        Map<String, String> headers = new HashMap<>();
+//        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
+//        headers.put("Authorization", "APPCODE " + appcode);
+//        Map<String, String> querys = new HashMap<>();
+//        querys.put("mobile", phone);
+//        querys.put("param", "**code**:" + smsCode + "**minute**:5");
+//
+//        //smsSignId（短信前缀）和templateId（短信模板），可登录国阳云控制台自助申请。参考文档：http://help.guoyangyun.com/Problem/Qm.html
+//        querys.put("smsSignId", "2e65b1bb3d054466b82f0c9d125465e2");
+//        querys.put("templateId", "908e94ccf08b4476ba6c876d13f084ad");
+//        Map<String, String> bodies = new HashMap<>();
+//
+//        try {
+//            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodies);
+//            // 5. 返回成功
+//            return new HttpResponseEntity<>().success(response.getStatusLine().getStatusCode());
+            return new HttpResponseEntity<>().success(null);
+//        } catch ( Exception e ) {
+//            return new HttpResponseEntity<>().serverError(null);
+//        }
 
     }
 
@@ -266,13 +253,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             user.setStatus(1);
             // 插入用户信息
             if ( userMapper.insert(user) != 0 ) {
-                if ( user.getRoleId() == 2 ) {
-                    // 网格员注册成功后创建消息队列
-                    reportMqManager.createQueueIfNotExists(Report.class, user.getUserId());
-                } else if ( user.getRoleId() == 1 ) {
-                    // 公众监督员注册成功后创建消息队列
-                    statisticsMqManager.createQueueIfNotExists(Statistics.class, user.getUserId());
-                }
                 return new HttpResponseEntity<UserDTO>().success(new UserDTO(user, null));
             } else {
                 return HttpResponseEntity.REGISTER_FAIL;
@@ -418,8 +398,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if ( userMapper.insert(user) == 0 ) {
             return null;
         } else {
-            // 创建公众监督员消息队列
-            statisticsMqManager.createQueueIfNotExists(Statistics.class, user.getUserId());
             return user;
         }
     }
@@ -440,23 +418,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             // 3. 为Redis的数据设置与token一样的有效期
             stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
 
-            // 4. 登录成功,根据用户身份返回用户信息
-
-            return switch ( user.getRoleId() ) {
-                case 1 -> {
-                    // 公众监督员登录成功后发送检测消息列表
-                    statisticsMqManager.createQueueIfNotExists(Statistics.class, user.getUserId()); // TODO 后面删掉
-                    List<Statistics> statisticsList = statisticsMqConsumer.getMessageFromQueue(Statistics.class, user.getUserId());
-                    yield new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user, new ArrayList<>(statisticsList)));
-                }
-                case 2 -> {
-                    // 网格员登录成功后发送上报消息列表
-                    reportMqManager.createQueueIfNotExists(Report.class, user.getUserId()); // TODO 后面删掉
-                    List<Report> reportList = reportMqConsumer.getMessageFromQueue(Report.class, user.getUserId());
-                    yield new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user, new ArrayList<>(reportList)));
-                }
-                default -> new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user, null));
-            };
+            // 4. 登录成功，返回用户信息
+            return new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user, null));
         } catch ( Exception e ) {
             return new HttpResponseEntity<UserDTO>().serverError(null);
         }

@@ -316,7 +316,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if ( user == null ) {
             return new HttpResponseEntity<User>().resultIsNull(null);
         } else {
-            try {
+//            try {
                 // 优先查询 Redis 缓存
                 Map<Object, Object> cashUserMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + user.getUserId());
                 if ( !cashUserMap.isEmpty() ) {
@@ -334,9 +334,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 } else {
                     return new HttpResponseEntity<User>().success(users.get(0));
                 }
-            } catch ( Exception e ) {
-                return new HttpResponseEntity<User>().serverError(null);
-            }
+//            } catch ( Exception e ) {
+//                return new HttpResponseEntity<User>().serverError(null);
+//            }
         }
     }
 
@@ -430,6 +430,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     private void refreshUserCache(User user) {
+        user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
         Map<String, Object> userMap = convertUserToMap(user);
         stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
         stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());

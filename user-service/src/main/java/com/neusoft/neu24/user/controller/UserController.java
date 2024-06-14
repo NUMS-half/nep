@@ -1,5 +1,6 @@
 package com.neusoft.neu24.user.controller;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
@@ -89,7 +90,7 @@ public class UserController {
     @PostMapping("/register")
     public HttpResponseEntity<UserDTO> register(@RequestBody Map<String, Object> registerInfo) {
         // 封装用户信息
-        User user = mapToUser(registerInfo);
+        User user = BeanUtil.fillBeanWithMap(registerInfo, new User(), false);
         // 注册
         return userService.register(user);
     }
@@ -119,7 +120,7 @@ public class UserController {
             if ( map == null || map.isEmpty() ) {
                 return userService.selectUserByPage(null, current, size);
             } else {
-                User user = mapToUser(map);
+                User user = BeanUtil.fillBeanWithMap(map, new User(), false);
                 return userService.selectUserByPage(user, current, size);
             }
         } catch ( Exception e ) {
@@ -154,7 +155,7 @@ public class UserController {
     @PostMapping(value = "/select/gm", headers = "Accept=application/json")
     public HttpResponseEntity<List<User>> selectGridManagers(@RequestBody Map<String, Object> gmInfo) {
         // 封装用户信息
-        User user = mapToUser(gmInfo);
+        User user = BeanUtil.fillBeanWithMap(gmInfo, new User(), false);
         // 查询网格员信息
         return userService.selectGridManagers(user);
     }
@@ -169,7 +170,7 @@ public class UserController {
     @PutMapping(value = "/update", headers = "Accept=application/json")
     public HttpResponseEntity<Boolean> updateUser(@RequestBody Map<String, Object> userInfo) {
         // 封装用户信息
-        User user = mapToUser(userInfo);
+        User user = BeanUtil.fillBeanWithMap(userInfo, new User(), false);
         // 更新用户信息
         return userService.updateUser(user);
     }
@@ -197,65 +198,6 @@ public class UserController {
     public HttpResponseEntity<Boolean> deleteUser(@RequestBody User user) {
         // 删除用户信息
         return userService.deleteUser(user);
-    }
-
-    /**
-     * <b>将Map转换为User对象<b/>
-     *
-     * @param map 前端传来的Map对象
-     * @return User对象
-     */
-    private User mapToUser(Map<String, Object> map) {
-        User user = new User();
-        map.forEach((key, value) -> {
-            switch ( key ) {
-                case "userId":
-                    user.setUserId((String) value);
-                    break;
-                case "username":
-                    user.setUsername((String) value);
-                    break;
-                case "password":
-                    user.setPassword((String) value);
-                    break;
-                case "realName":
-                    user.setRealName((String) value);
-                    break;
-                case "telephone":
-                    user.setTelephone((String) value);
-                    break;
-                case "gender":
-                    user.setGender((Integer) value);
-                    break;
-                case "birthday":
-                    user.setBirthday((String) value);
-                    break;
-                case "roleId":
-                    user.setRoleId((Integer) value);
-                    break;
-                case "headPhotoLoc":
-                    user.setHeadPhotoLoc((String) value);
-                    break;
-                case "gmProvinceCode":
-                    user.setGmProvinceCode((String) value);
-                    break;
-                case "gmCityCode":
-                    user.setGmCityCode((String) value);
-                    break;
-                case "gmTownCode":
-                    user.setGmTownCode((String) value);
-                    break;
-                case "gmState":
-                    user.setGmState((Integer) value);
-                    break;
-                case "remarks":
-                    user.setRemarks((String) value);
-                    break;
-                default:
-                    break;
-            }
-        });
-        return user;
     }
 
 }

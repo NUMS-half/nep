@@ -124,7 +124,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 //            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodies);
 //            // 5. 返回成功
 //            return new HttpResponseEntity<>().success(response.getStatusLine().getStatusCode());
-            return new HttpResponseEntity<>().success(null);
+        return new HttpResponseEntity<>().success(null);
 //        } catch ( Exception e ) {
 //            return new HttpResponseEntity<>().serverError(null);
 //        }
@@ -274,9 +274,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public HttpResponseEntity<Boolean> updateUser(User user) {
         // 更新用户数据
         try {
-            return userMapper.updateById(user) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(null) :
-                    HttpResponseEntity.UPDATE_FAIL;
+            if ( userMapper.updateById(user) != 0 ) {
+                refreshUserCache(user);
+                return new HttpResponseEntity<Boolean>().success(null);
+            } else {
+                return HttpResponseEntity.UPDATE_FAIL;
+            }
         } catch ( DataAccessException e ) {
             return HttpResponseEntity.UPDATE_FAIL;
         } catch ( Exception e ) {
@@ -404,6 +407,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     /**
      * 处理用户登录校验通过后的逻辑
+     *
      * @param user 用户信息
      * @return 登录成功后的响应
      */
@@ -423,6 +427,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         } catch ( Exception e ) {
             return new HttpResponseEntity<UserDTO>().serverError(null);
         }
+    }
+
+    private void refreshUserCache(User user) {
+        Map<String, Object> userMap = convertUserToMap(user);
+        stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
+        stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
     }
 
     /**

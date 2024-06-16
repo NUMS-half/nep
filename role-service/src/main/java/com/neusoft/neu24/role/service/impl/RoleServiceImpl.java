@@ -12,6 +12,7 @@ import com.neusoft.neu24.role.service.IRoleService;
 import jakarta.annotation.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -175,10 +176,11 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
      */
     @Override
     public HttpResponseEntity<Boolean> updateRoleAuth(Integer roleId, List<Integer> nodeIds) {
-        if ( roleId == null || nodeIds == null || nodeIds.isEmpty() ) {
+        if ( roleId == null || nodeIds == null ) {
             return HttpResponseEntity.UPDATE_FAIL;
         }
         try {
+            roleMapper.deleteRoleNodes(roleId);
             return roleMapper.insertRoleAuth(roleId, nodeIds) > 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
                     HttpResponseEntity.UPDATE_FAIL;

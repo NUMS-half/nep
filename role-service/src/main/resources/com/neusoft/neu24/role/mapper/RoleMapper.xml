@@ -14,8 +14,13 @@
                                    WHERE pid IS NOT NULL))
     </select>
 
+    <!-- 删除角色的所有节点关联 -->
+    <delete id="deleteRoleNodes">
+        DELETE FROM role_node_r WHERE role_id = #{roleId}
+    </delete>
+
     <insert id="insertRoleAuth">
-        insert into role_sysnode_r(roleId,sid) values
+        INSERT INTO role_node_r (role_id, node_id) values
         <foreach collection="nodeIds" item="nodeId" separator=",">
             ( #{roleId} , #{nodeId} )
         </foreach>

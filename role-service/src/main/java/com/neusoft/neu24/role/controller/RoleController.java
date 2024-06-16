@@ -91,5 +91,14 @@ public class RoleController {
         return roleService.updateRole(role);
     }
 
+    /**
+     * 修改角色权限信息
+     */
+    @PutMapping(value = "/update/auth", headers = "Accept=application/json")
+    public HttpResponseEntity<Boolean> updateRoleAuth(@RequestBody Map<String, Object> map) {
+        Integer roleId = (Integer) map.get("roleId");
+        List<Integer> nodeIds = (List<Integer>) map.get("nodeIds");
+        return roleService.updateRoleAuth(roleId, nodeIds);
+    }
 
 }

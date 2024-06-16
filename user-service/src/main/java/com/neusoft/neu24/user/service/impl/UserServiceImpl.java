@@ -316,7 +316,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if ( user == null ) {
             return new HttpResponseEntity<User>().resultIsNull(null);
         } else {
-//            try {
+            try {
                 // 优先查询 Redis 缓存
                 Map<Object, Object> cashUserMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + user.getUserId());
                 if ( !cashUserMap.isEmpty() ) {
@@ -334,9 +334,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 } else {
                     return new HttpResponseEntity<User>().success(users.get(0));
                 }
-//            } catch ( Exception e ) {
-//                return new HttpResponseEntity<User>().serverError(null);
-//            }
+            } catch ( Exception e ) {
+                return new HttpResponseEntity<User>().serverError(null);
+            }
         }
     }
 

@@ -28,5 +28,7 @@ public interface RoleMapper extends BaseMapper<Role> {
      */
     List<Integer> selectSystemNodeById(@Param("roleId") Integer roleId);
 
+    int deleteRoleNodes(@Param("roleId") Integer roleId);
+
     int insertRoleAuth(@Param("roleId") Integer roleId, @Param("nodeIds") List<Integer> nodeIds);
 }

@@ -24,23 +24,6 @@ public class GridController {
     private IGridService gridService;
 
     /**
-     * 获取网格层次信息
-     * @return 网格层次树
-     */
-    @PostMapping("/gridTree")
-    public HttpResponseEntity<Map<String, Object>> getLocationTree() {
-        try {
-            HttpResponseEntity<Map<String, Object>> responseEntity = gridService.getGridTree();
-            if ( responseEntity.getData().isEmpty() ) {
-                return new HttpResponseEntity<Map<String, Object>>().resultIsNull(null);
-            }
-            return responseEntity;
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<Map<String, Object>>().serverError(null);
-        }
-    }
-
-    /**
      * 更新网格区/县信息
      * @param map 网格区/县信息map
      * @return 是否更新成功
@@ -58,4 +41,11 @@ public class GridController {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
     }
+
+    @GetMapping(value = "/select/{townCode}")
+    public HttpResponseEntity<Grid> selectGridByTownCode(@PathVariable("townCode") String townCode) {
+        return gridService.selectGridByTownCode(townCode);
+    }
+
+
 }

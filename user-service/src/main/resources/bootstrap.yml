@@ -19,3 +19,8 @@ spring:
           - data-id: shared-redis.yml
           - data-id: shared-rabbitmq.yml
 
+#nep:
+#  redis:
+#    host: localhost
+#    password: neu030713
+#    service-db: 0

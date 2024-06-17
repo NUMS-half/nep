@@ -4,4 +4,4 @@ server:
 logging:
   level:
     root: info
-    com.neusoft.neu24.grid.mapper: debug
+#    com.neusoft.neu24.grid.mapper: debug

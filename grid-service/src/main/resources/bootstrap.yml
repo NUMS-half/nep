@@ -18,3 +18,8 @@ spring:
           - data-id: shared-jdbc.yml # shared jdbc config file
           - data-id: shared-redis.yml
 
+nep:
+  redis:
+#    host: localhost
+#    password: neu030713
+    service-db: 1

@@ -3,6 +3,7 @@ package com.neusoft.neu24.report.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.neusoft.neu24.dto.ReportDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.report.service.IReportService;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * <p>
@@ -24,6 +26,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/report")
 public class ReportController {
+
+    private static final Logger logger = Logger.getLogger("ReportController");
 
     @Resource
     IReportService reportService;
@@ -68,7 +72,7 @@ public class ReportController {
      * @return 查询结果
      */
     @GetMapping(value = "/select/{reportId}")
-    public HttpResponseEntity<Report> selectReportById(@PathVariable String reportId) {
+    public HttpResponseEntity<ReportDTO> selectReportById(@PathVariable String reportId) {
         return reportService.selectReportById(reportId);
     }
 
@@ -81,18 +85,19 @@ public class ReportController {
      * @return 分页查询结果
      */
     @PostMapping(value = "/select/page", headers = "Accept=application/json")
-    public HttpResponseEntity<IPage<Report>> selectReportByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
+    public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
 
-        try {
+//        try {
             if ( map == null || map.isEmpty() ) {
                 return reportService.selectReportByPage(null, current, size);
             } else {
+                logger.info("Report分页查询条件: " + map);
                 Report report = BeanUtil.fillBeanWithMap(map,new Report(), false);
                 return reportService.selectReportByPage(report, current, size);
             }
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<IPage<Report>>().serverError(null);
-        }
+//        } catch ( Exception e ) {
+//            return new HttpResponseEntity<IPage<ReportDTO>>().serverError(null);
+//        }
     }
 
     /**

@@ -1,9 +1,12 @@
 package com.neusoft.neu24.grid.mapper;
 
 import com.neusoft.neu24.entity.Grid;
+import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -17,29 +20,16 @@ import java.util.List;
 public interface GridMapper {
 
     /**
-     * 获取所有省份信息
-     * @return 省份信息列表
-     */
-    List<Grid> getProvinces();
-
-    /**
-     * 根据省份编码获取所有城市信息
-     * @param provinceCode 省份编码
-     * @return 对应的城市信息列表
-     */
-    List<Grid> getCitiesByProvinceCode(String provinceCode);
-
-    /**
-     * 根据城市编码获取所有区县信息
-     * @param cityCode 城市编码
-     * @return 对应的区县信息列表
-     */
-    List<Grid> getTownsByCityCode(String cityCode);
-
-    /**
      * 更新网格区/县信息
      * @param grid 网格区/县信息
      * @return 是否更新成功
      */
     boolean updateGridTown(Grid grid);
+
+    /**
+     * 根据区县编码获取完整的网格信息
+     * @param townCode 区县编码
+     * @return 完整的网格信息
+     */
+    List<Grid> selectGridByTownCode(@Param("townCode") String townCode);
 }

@@ -1,9 +1,13 @@
 package com.neusoft.neu24.entity;
 
+import cn.hutool.json.JSON;
+import cn.hutool.json.JSONUtil;
 import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
+
+import static com.neusoft.neu24.config.RedisConstants.GRID_KEY;
 
 @Data
 public class Grid implements Serializable {
@@ -55,5 +59,9 @@ public class Grid implements Serializable {
      * 网格区域的区/县编码
      */
     private String townCode;
+
+    public String redisTownCode() {
+        return GRID_KEY + townCode;
+    }
 
 }

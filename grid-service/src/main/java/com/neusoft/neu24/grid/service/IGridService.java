@@ -17,12 +17,14 @@ import java.util.Map;
 public interface IGridService {
 
     /**
-     * 获取网格层次信息
-     * @return 网格层次树
+     * 根据区县编码获取完整的网格信息
+     * @param townCode 区县编码
+     * @return 完整的网格信息
      */
-    HttpResponseEntity<Map<String, Object>> getGridTree();
+    HttpResponseEntity<Grid> selectGridByTownCode(String townCode);
 
     /**
+     * 更新网格区/县信息
      * @param grid 网格区/县信息
      * @return 是否更新成功
      */

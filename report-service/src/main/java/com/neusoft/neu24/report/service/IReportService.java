@@ -1,6 +1,7 @@
 package com.neusoft.neu24.report.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.neusoft.neu24.dto.ReportDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -43,7 +44,7 @@ public interface IReportService extends IService<Report> {
      * @param reportId 查询目标ID
      * @return 查询结果
      */
-    HttpResponseEntity<Report> selectReportById(String reportId);
+    HttpResponseEntity<ReportDTO> selectReportById(String reportId);
 
     /**
      * 条件分页查询反馈信息
@@ -53,7 +54,7 @@ public interface IReportService extends IService<Report> {
      * @param size 每页数据条数
      * @return 分页查询结果
      */
-    HttpResponseEntity<IPage<Report>> selectReportByPage(Report report, long current, long size);
+    HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(Report report, long current, long size);
 
     /**
      * 设置反馈信息状态

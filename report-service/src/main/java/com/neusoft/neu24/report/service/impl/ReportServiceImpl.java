@@ -1,10 +1,14 @@
 package com.neusoft.neu24.report.service.impl;
 
 import cn.hutool.core.date.LocalDateTimeUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.neusoft.neu24.client.GridClient;
 import com.neusoft.neu24.client.UserClient;
+import com.neusoft.neu24.dto.ReportDTO;
+import com.neusoft.neu24.entity.Grid;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.User;
@@ -42,6 +46,11 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      * 用户服务客户端(由动态代理注入)
      */
     private final UserClient userClient;
+
+    /**
+     * 网格服务客户端
+     */
+    private final GridClient gridClient;
 
     /**
      * 新建公众监督员的反馈
@@ -132,17 +141,20 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      * @return 查询结果
      */
     @Override
-    public HttpResponseEntity<Report> selectReportById(String reportId) {
+    public HttpResponseEntity<ReportDTO> selectReportById(String reportId) {
         if ( reportId == null ) {
-            return new HttpResponseEntity<Report>().resultIsNull(null);
+            return new HttpResponseEntity<ReportDTO>().resultIsNull(null);
         } else {
             QueryWrapper<Report> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("report_id", reportId);
-            Report result = reportMapper.selectOne(queryWrapper);
-            if ( result == null ) {
-                return new HttpResponseEntity<Report>().resultIsNull(null);
+            Report report = reportMapper.selectOne(queryWrapper);
+            if ( report == null ) {
+                return new HttpResponseEntity<ReportDTO>().resultIsNull(null);
             } else {
-                return new HttpResponseEntity<Report>().success(result);
+                ReportDTO reportDTO = fillReportDTO(report);
+                return reportDTO == null ?
+                        new HttpResponseEntity<ReportDTO>().resultIsNull(new ReportDTO(report)) :
+                        new HttpResponseEntity<ReportDTO>().success(reportDTO);
             }
         }
     }
@@ -156,35 +168,30 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      * @return 分页查询结果
      */
     @Override
-    public HttpResponseEntity<IPage<Report>> selectReportByPage(Report report, long current, long size) {
+    public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(Report report, long current, long size) {
         IPage<Report> page = new Page<>(current, size);
         IPage<Report> pages;
-        QueryWrapper<Report> queryWrapper = new QueryWrapper<>();
+        LambdaQueryWrapper<Report> queryWrapper = new LambdaQueryWrapper<>();
         if ( report != null ) {
-            // 使用 HashMap 存储属性值，以确保类型正确
-            Map<String, Object> params = new HashMap<>();
-            params.put("report_id", report.getReportId());
-            params.put("user_id", report.getUserId());
-            params.put("province_code", report.getProvinceCode());
-            params.put("city_code", report.getCityCode());
-            params.put("town_code", report.getTownCode());
-            params.put("address", report.getAddress());
-            params.put("information", report.getInformation());
-            params.put("estimated_level", report.getEstimatedLevel());
-            params.put("report_time", report.getReportTime());
-            params.put("gm_user_id", report.getGmUserId());
-            params.put("assign_time", report.getAssignTime());
-            params.put("state", report.getState());
-            // 添加查询条件
-            queryWrapper.allEq(params);
 
+            queryWrapper.eq(report.getUserId() != null, Report::getUserId, report.getUserId())
+                    .eq(report.getProvinceCode() != null, Report::getProvinceCode, report.getProvinceCode())
+                    .eq(report.getCityCode() != null, Report::getCityCode, report.getCityCode())
+                    .eq(report.getTownCode() != null, Report::getTownCode, report.getTownCode())
+                    .eq(report.getAddress() != null, Report::getAddress, report.getAddress())
+                    .eq(report.getInformation() != null, Report::getInformation, report.getInformation())
+                    .eq(report.getEstimatedLevel() != null, Report::getEstimatedLevel, report.getEstimatedLevel())
+                    .eq(report.getGmUserId() != null, Report::getGmUserId, report.getGmUserId())
+                    .eq(report.getState() != null, Report::getState, report.getState());
             pages = getBaseMapper().selectPage(page, queryWrapper);
         } else {
             pages = getBaseMapper().selectPage(page, null);
         }
-        return pages == null || pages.getTotal() == 0 ?
-                new HttpResponseEntity<IPage<Report>>().resultIsNull(null) :
-                new HttpResponseEntity<IPage<Report>>().success(pages);
+        if ( pages == null || pages.getTotal() == 0 ) {
+            return new HttpResponseEntity<IPage<ReportDTO>>().resultIsNull(null);
+        }
+        IPage<ReportDTO> dtoPages = pages.convert(this::fillReportDTO);
+        return new HttpResponseEntity<IPage<ReportDTO>>().success(dtoPages);
     }
 
     /**
@@ -212,5 +219,22 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
+    }
+
+    /**
+     * 填充反馈信息的用户信息和网格信息
+     * @param report 反馈信息
+     * @return 填充后的反馈信息
+     */
+    private ReportDTO fillReportDTO(Report report) {
+        HttpResponseEntity<User> userResponse = userClient.selectUser(Map.of("userId",report.getUserId()));
+        HttpResponseEntity<Grid> gridResponse = gridClient.selectGridByTownCode(report.getTownCode());
+        if ( userResponse.getCode() != 200 || gridResponse.getCode() != 200 ) {
+            return null;
+        }
+        ReportDTO reportDTO = new ReportDTO(report);
+        reportDTO.fillUserInfo(userResponse.getData());
+        reportDTO.fillGridInfo(gridResponse.getData());
+        return reportDTO;
     }
 }

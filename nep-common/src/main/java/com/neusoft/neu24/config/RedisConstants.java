@@ -13,4 +13,6 @@ public class RedisConstants {
 
     public static final String CHAT_HISTORY = "nep:chat:history:";
 
+    public static final String GRID_KEY = "nep:grid:";
+
 }

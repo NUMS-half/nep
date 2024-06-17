@@ -12,6 +12,13 @@ logging:
     root: info
     com.neusoft.neu24.user.mapper: debug # print the executed SQL from Mybatis
 
+spring:
+  cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8070 # sentinel dashboard address
+      http-method-specify: true # enable the HTTP method prefix
+
 nep:
   jwt:
     location: classpath:nep.jks

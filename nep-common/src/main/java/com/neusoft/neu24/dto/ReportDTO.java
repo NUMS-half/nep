@@ -5,7 +5,6 @@ import com.neusoft.neu24.entity.Grid;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.User;
 import lombok.Data;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 
@@ -46,7 +45,7 @@ public class ReportDTO {
     private String address;
 
     // 反馈预估AQI等级
-    private Integer estimateLevel;
+    private Integer estimatedLevel;
 
     // 反馈内容
     private String information;
@@ -68,7 +67,7 @@ public class ReportDTO {
         this.cityCode = report.getCityCode();
         this.townCode = report.getTownCode();
         this.address = report.getAddress();
-        this.estimateLevel = report.getEstimatedLevel();
+        this.estimatedLevel = report.getEstimatedLevel();
         this.information = report.getInformation();
         this.reportTime = report.getReportTime();
         this.gmUserId = report.getGmUserId();

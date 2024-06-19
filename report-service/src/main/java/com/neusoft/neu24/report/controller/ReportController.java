@@ -9,11 +9,13 @@ import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.report.service.IReportService;
 import com.neusoft.neu24.utils.UserContext;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * <p>
@@ -23,11 +25,12 @@ import java.util.logging.Logger;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
+@Slf4j
 @RestController
 @RequestMapping("/report")
 public class ReportController {
 
-    private static final Logger logger = Logger.getLogger("ReportController");
+    private static final Logger logger = LoggerFactory.getLogger(ReportController.class);
 
     @Resource
     IReportService reportService;
@@ -87,17 +90,17 @@ public class ReportController {
     @PostMapping(value = "/select/page", headers = "Accept=application/json")
     public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
 
-//        try {
+        try {
             if ( map == null || map.isEmpty() ) {
                 return reportService.selectReportByPage(null, current, size);
             } else {
-                logger.info("Report分页查询条件: " + map);
+                logger.info("Report分页查询条件: {}", map);
                 Report report = BeanUtil.fillBeanWithMap(map,new Report(), false);
                 return reportService.selectReportByPage(report, current, size);
             }
-//        } catch ( Exception e ) {
-//            return new HttpResponseEntity<IPage<ReportDTO>>().serverError(null);
-//        }
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<IPage<ReportDTO>>().serverError(null);
+        }
     }
 
     /**

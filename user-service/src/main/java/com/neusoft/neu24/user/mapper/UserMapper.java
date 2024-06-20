@@ -35,4 +35,7 @@ public interface UserMapper extends BaseMapper<User> {
     @Update("UPDATE user SET status = #{status} WHERE user_id = #{userId}")
     int updateStatus(@Param("userId") String userId, @Param("status") int status);
 
+    @Update("UPDATE user SET gm_state = #{gmState} WHERE user_id = #{gmUserId}")
+    int updateGmState(@Param("gmUserId") String gmUserId, @Param("gmState") int gmState);
+
 }

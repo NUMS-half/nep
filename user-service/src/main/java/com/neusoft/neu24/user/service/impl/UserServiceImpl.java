@@ -222,6 +222,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     /**
+     * 修改用户网格员工作状态
+     *
+     * @param gmUserId 网格员ID
+     * @param gmState  修改为的状态
+     * @return 修改是否成功
+     */
+    @Override
+    public HttpResponseEntity<Boolean> changeGmState(String gmUserId, Integer gmState) {
+        try {
+            return userMapper.updateGmState(gmUserId, gmState) != 0 ?
+                    new HttpResponseEntity<Boolean>().success(null) :
+                    HttpResponseEntity.UPDATE_FAIL;
+        } catch ( DataAccessException e ) {
+            return HttpResponseEntity.UPDATE_FAIL;
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
+    }
+
+    /**
      * 删除用户
      *
      * @param user 用户信息
@@ -354,17 +374,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         } else {
             try {
                 // 查询条件
-                QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-                if ( gridManager.getGmProvinceCode() != null ) {
-                    queryWrapper.eq("gm_province_code", gridManager.getGmProvinceCode());
-                }
-                if ( gridManager.getGmCityCode() != null ) {
-                    queryWrapper.eq("gm_city_code", gridManager.getGmCityCode());
-                }
-                if ( gridManager.getGmTownCode() != null ) {
-                    queryWrapper.eq("gm_town_code", gridManager.getGmTownCode());
-                }
-                queryWrapper.eq("role_id", 2).ne("status", -1);
+                LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(gridManager.getGmProvinceCode() != null, User::getGmProvinceCode, gridManager.getGmProvinceCode())
+                        .eq(gridManager.getGmCityCode() != null, User::getGmCityCode, gridManager.getGmCityCode())
+                        .eq(gridManager.getGmTownCode() != null, User::getGmTownCode, gridManager.getGmTownCode())
+                        .eq(gridManager.getRoleId() != null, User::getRoleId, gridManager.getRoleId())
+                        .eq(gridManager.getStatus() != null, User::getStatus, gridManager.getStatus())
+                        .eq(User::getRoleId, gridManager.getUserId())
+                        .ne(User::getStatus, -1);
                 List<User> gridManagers = userMapper.selectList(queryWrapper);
 
                 // 处理查询结果

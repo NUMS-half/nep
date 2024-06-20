@@ -8,10 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.neusoft.neu24.client.GridClient;
 import com.neusoft.neu24.client.UserClient;
 import com.neusoft.neu24.dto.ReportDTO;
-import com.neusoft.neu24.entity.Grid;
-import com.neusoft.neu24.entity.HttpResponseEntity;
-import com.neusoft.neu24.entity.Report;
-import com.neusoft.neu24.entity.User;
+import com.neusoft.neu24.entity.*;
 import com.neusoft.neu24.report.mapper.ReportMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.report.service.IReportService;
@@ -60,7 +57,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
     @Override
     public HttpResponseEntity<Report> addReport(Report report) {
         try {
-            if( reportMapper.insert(report) != 0 ) {
+            if ( reportMapper.insert(report) != 0 ) {
                 return new HttpResponseEntity<Report>().success(report);
             } else {
                 return new HttpResponseEntity<Report>().addFail(null);
@@ -101,20 +98,22 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
     @Override
     public HttpResponseEntity<Boolean> assignGridManager(String reportId, String gridManagerId) {
 
-        Map<String, Object> map = Map.of("userId", gridManagerId);
+        Map<String, Object> map = Map.of("userId", gridManagerId,
+                                         "roleId", 2,
+                                         "gmStatus", 0);
         try {
             // 1. 查询网格员信息
             HttpResponseEntity<User> gridManager = userClient.selectUser(map);
             if ( gridManager.getCode() != 200 ) {
                 // 2. 网格员不存在，指派失败
-                return HttpResponseEntity.ASSIGN_FAIL;
+                return new HttpResponseEntity<>().assignFail(false, ResponseEnum.ASSIGN_FAIL_NO_GM);
             }
 
             // 3. 查询已经存在的反馈信息
             Report report = reportMapper.selectById(reportId);
             // 如果反馈信息不存在或已经指派，则指派失败
             if ( report == null || report.getState() != 0 ) {
-                return HttpResponseEntity.ASSIGN_FAIL;
+                return new HttpResponseEntity<>().assignFail(false, ResponseEnum.ASSIGN_FAIL_HAS_ASSIGNED);
             }
             report.setGmUserId(gridManagerId);
             report.setAssignTime(LocalDateTimeUtil.now());
@@ -124,9 +123,10 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             if ( reportMapper.updateById(report) != 0 ) {
                 // 5. 指派成功，则发送消息到消息队列
                 rabbitTemplate.convertAndSend("user.exchange", "notification." + gridManagerId, report);
+                rabbitTemplate.convertAndSend("user.exchange", "assign.success", gridManagerId);
                 return new HttpResponseEntity<Boolean>().success(true);
             } else {
-                return HttpResponseEntity.ASSIGN_FAIL;
+                return new HttpResponseEntity<>().assignFail(false, ResponseEnum.ASSIGN_FAIL_UPDATE_FAIL);
             }
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
@@ -221,11 +221,12 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
 
     /**
      * 填充反馈信息的用户信息和网格信息
+     *
      * @param report 反馈信息
      * @return 填充后的反馈信息
      */
     private ReportDTO fillReportDTO(Report report) {
-        HttpResponseEntity<User> userResponse = userClient.selectUser(Map.of("userId",report.getUserId()));
+        HttpResponseEntity<User> userResponse = userClient.selectUser(Map.of("userId", report.getUserId()));
         HttpResponseEntity<Grid> gridResponse = gridClient.selectGridByTownCode(report.getTownCode());
         if ( userResponse.getCode() != 200 || gridResponse.getCode() != 200 ) {
             return null;

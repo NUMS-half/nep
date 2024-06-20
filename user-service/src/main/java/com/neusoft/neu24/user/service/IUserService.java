@@ -100,9 +100,17 @@ public interface IUserService extends IService<User> {
     HttpResponseEntity<Boolean> changeStatus(User user, Integer status);
 
     /**
+     * 修改用户网格员工作状态
+     * @param gmUserId 网格员ID
+     * @param gmState 修改为的状态
+     * @return 修改是否成功
+     */
+    HttpResponseEntity<Boolean> changeGmState(String gmUserId, Integer gmState);
+
+    /**
      * 删除用户
-     * @param user
-     * @return
+     * @param user 用户信息
+     * @return 删除是否成功
      */
     HttpResponseEntity<Boolean> deleteUser(User user);
 

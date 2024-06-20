@@ -28,6 +28,6 @@ public interface UserClient {
      * @param gmInfo 网格员信息
      * @return 查询结果
      */
-    @PostMapping(value = "/select/gm", headers = "Accept=application/json")
+    @PostMapping(value = "/user/select/gm", headers = "Accept=application/json")
     HttpResponseEntity<List<User>> selectGridManagers(@RequestBody Map<String, Object> gmInfo);
 }

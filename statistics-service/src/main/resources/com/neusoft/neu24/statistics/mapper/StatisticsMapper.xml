@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.neu24.statistics.mapper.StatisticsMapper">
+
+
+    <select id="selectItemizedStatistics" parameterType="java.lang.String" resultType="com.neusoft.neu24.dto.ItemizedStatisticsDTO">
+        SELECT
+        s.province_code AS provinceCode,
+        <if test="provinceCode != null and provinceCode != ''">
+            s.city_code AS cityCode,
+        </if>
+        SUM(IF(s.so2_value > 100, 1, 0)) AS so2ExcessCount,
+        SUM(IF(s.co_value > 100, 1, 0)) AS coExcessCount,
+        SUM(IF(s.spm_value > 100, 1, 0)) AS spmExcessCount,
+        SUM(IF(s.aqi_id > 2, 1, 0)) AS aqiExcessCount
+        FROM
+        statistics s
+        <choose>
+            <when test="provinceCode != null and provinceCode != ''">
+                WHERE
+                s.province_code = #{provinceCode}
+                GROUP BY s.city_code;
+            </when>
+            <otherwise>
+                GROUP BY
+                s.province_code;
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectMonthAQIExcess" parameterType="java.lang.String" resultType="com.neusoft.neu24.dto.MonthAQIExcessDTO">
+        SELECT
+        DATE_FORMAT(s.confirm_time, '%Y-%m') AS month,
+        SUM(IF(s.aqi_id > 2, 1, 0)) AS excessCount,
+        s.province_code AS provinceCode
+        FROM
+        statistics s
+        <if test="provinceCode != null and provinceCode != ''">
+            WHERE
+            s.province_code = #{provinceCode}
+        </if>
+        GROUP BY
+        DATE_FORMAT(s.confirm_time, '%Y-%m');
+    </select>
+
+    <select id="selectAQIDistribution" parameterType="java.lang.String" resultType="com.neusoft.neu24.dto.AQIDistributeDTO">
+        SELECT aqi_id, COUNT(*) AS count
+        FROM statistics
+        <if test="provinceCode != null and provinceCode != ''">
+            WHERE province_code = #{provinceCode}
+        </if>
+        GROUP BY aqi_id;
+    </select>
+
+</mapper>

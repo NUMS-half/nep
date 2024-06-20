@@ -1,9 +1,11 @@
 package com.neusoft.neu24.grid.service;
 
 
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.neusoft.neu24.entity.Grid;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,6 +24,10 @@ public interface IGridService {
      * @return 完整的网格信息
      */
     HttpResponseEntity<Grid> selectGridByTownCode(String townCode);
+
+    HttpResponseEntity<Map<Object,Object>> selectProvinceMap();
+
+    HttpResponseEntity<Map<Object,Object>> selectCitiesMapByProvince(String provinceCode);
 
     /**
      * 更新网格区/县信息

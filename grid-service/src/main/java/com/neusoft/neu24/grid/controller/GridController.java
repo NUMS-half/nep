@@ -6,6 +6,7 @@ import com.neusoft.neu24.grid.service.IGridService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -42,10 +43,21 @@ public class GridController {
         }
     }
 
+    @GetMapping(value = "/select/province/map")
+    public HttpResponseEntity<Map<Object, Object>> selectProvinceMap() {
+        return gridService.selectProvinceMap();
+    }
+
+    @GetMapping(value = "/select/cities/{provinceCode}")
+    public HttpResponseEntity<Map<Object,Object>> selectCitiesByProvinceCode(@PathVariable("provinceCode") String provinceCode) {
+        return gridService.selectCitiesMapByProvince(provinceCode);
+    }
+
     @GetMapping(value = "/select/{townCode}")
     public HttpResponseEntity<Grid> selectGridByTownCode(@PathVariable("townCode") String townCode) {
         return gridService.selectGridByTownCode(townCode);
     }
+
 
 
 }

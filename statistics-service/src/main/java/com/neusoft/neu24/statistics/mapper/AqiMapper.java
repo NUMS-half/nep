@@ -2,6 +2,7 @@ package com.neusoft.neu24.statistics.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.neusoft.neu24.entity.Aqi;
+import org.apache.ibatis.annotations.Mapper;
 
 
 /**
@@ -12,6 +13,6 @@ import com.neusoft.neu24.entity.Aqi;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
-
+@Mapper
 public interface AqiMapper extends BaseMapper<Aqi> {
 }

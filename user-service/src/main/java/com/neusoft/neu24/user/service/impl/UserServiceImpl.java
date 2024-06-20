@@ -312,6 +312,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @param user 用户信息
      * @return 查询结果
      */
+    @Override
     public HttpResponseEntity<User> selectUser(User user) {
         if ( user == null ) {
             return new HttpResponseEntity<User>().resultIsNull(null);

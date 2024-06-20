@@ -4,6 +4,9 @@ package com.neusoft.neu24.statistics.controller;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.neusoft.neu24.dto.ItemizedStatisticsDTO;
+import com.neusoft.neu24.dto.MonthAQIExcessDTO;
+import com.neusoft.neu24.dto.StatisticsDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
 import com.neusoft.neu24.statistics.service.IStatisticsService;
@@ -53,7 +56,7 @@ public class StatisticsController {
      * @return 查询结果
      */
     @GetMapping(value = "/select/{statisticsId}")
-    public HttpResponseEntity<Statistics> selectStatisticsById(@PathVariable("statisticsId") String statisticsId) {
+    public HttpResponseEntity<StatisticsDTO> selectStatisticsById(@PathVariable("statisticsId") String statisticsId) {
         return statisticsService.selectStatisticsById(statisticsId);
     }
 
@@ -66,7 +69,7 @@ public class StatisticsController {
      * @return 分页查询结果
      */
     @PostMapping(value = "/select/page", headers = "Accept=application/json")
-    public HttpResponseEntity<IPage<Statistics>> selectStatisticsByPage(@RequestBody Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
+    public HttpResponseEntity<IPage<StatisticsDTO>> selectStatisticsByPage(@RequestBody Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
         try {
             if ( map == null ) {
                 return statisticsService.selectStatisticsByPage(null, current, size);
@@ -76,7 +79,7 @@ public class StatisticsController {
                 return statisticsService.selectStatisticsByPage(statistics, current, size);
             }
         } catch ( Exception e ) {
-            return new HttpResponseEntity<IPage<Statistics>>().serverError(null);
+            return new HttpResponseEntity<IPage<StatisticsDTO>>().serverError(null);
         }
     }
 
@@ -94,6 +97,30 @@ public class StatisticsController {
             return statisticsService.updateStatistics(statistics);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(false);
+        }
+    }
+
+    /**
+     * 查询省/市分项指标超标统计
+     */
+    @GetMapping(value = "/excess/item")
+    public HttpResponseEntity<List<ItemizedStatisticsDTO>> selectItemExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
+        try {
+            return statisticsService.selectItemizedStatistics(provinceCode);
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<List<ItemizedStatisticsDTO>>().serverError(null);
+        }
+    }
+
+    /**
+     * 按月查询AQI指数超标统计
+     */
+    @GetMapping(value = "/excess/month")
+    public HttpResponseEntity<List<MonthAQIExcessDTO>> selectMonthAQIExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
+        try {
+            return statisticsService.selectMonthAQIExcess(provinceCode);
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<List<MonthAQIExcessDTO>>().serverError(null);
         }
     }
 

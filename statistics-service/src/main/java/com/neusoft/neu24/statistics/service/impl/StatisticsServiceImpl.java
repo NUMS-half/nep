@@ -1,22 +1,31 @@
 package com.neusoft.neu24.statistics.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.neusoft.neu24.entity.HttpResponseEntity;
-import com.neusoft.neu24.entity.Statistics;
+import com.neusoft.neu24.client.GridClient;
+import com.neusoft.neu24.client.UserClient;
+import com.neusoft.neu24.dto.*;
+import com.neusoft.neu24.entity.*;
 import com.neusoft.neu24.statistics.mapper.StatisticsMapper;
 import com.neusoft.neu24.statistics.service.IStatisticsService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
 
 /**
  * <b>统计信息服务实现类</b>
@@ -24,15 +33,28 @@ import java.util.Map;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statistics> implements IStatisticsService {
+
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(StatisticsServiceImpl.class);
 
     @Resource
     private StatisticsMapper statisticsMapper;
 
     @Resource
     RabbitTemplate rabbitTemplate;
+
+    /**
+     * 用户服务客户端
+     */
+    private final UserClient userClient;
+
+    /**
+     * 网格服务客户端
+     */
+    private final GridClient gridClient;
 
     /**
      * <b>保存网格员测量的统计信息<b/>
@@ -90,29 +112,25 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return 分页查询结果
      */
     @Override
-    public HttpResponseEntity<IPage<Statistics>> selectStatisticsByPage(Statistics statistics, long current, long size) {
+    public HttpResponseEntity<IPage<StatisticsDTO>> selectStatisticsByPage(Statistics statistics, long current, long size) {
         IPage<Statistics> page = new Page<>(current, size);
         IPage<Statistics> pages;
-        QueryWrapper<Statistics> queryWrapper = new QueryWrapper<>();
+        LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
+        // 可通过省市区和确认时间四种条件查询
         if ( statistics != null ) {
-            Map<String, Object> params = new HashMap<>();
-            params.put("statistics_id", statistics.getStatisticsId());
-            params.put("province_code", statistics.getProvinceCode());
-            params.put("city_code", statistics.getCityCode());
-            params.put("town_code", statistics.getTownCode());
-            params.put("address", statistics.getAddress());
-            params.put("aqi_id", statistics.getAqiId());
-            params.put("confirm_time", statistics.getConfirmTime());
-            params.put("gm_user_id", statistics.getGmUserId());
-
-            queryWrapper.allEq(params);
+            queryWrapper.eq(statistics.getProvinceCode() != null, Statistics::getProvinceCode, statistics.getProvinceCode())
+                    .eq(statistics.getCityCode() != null, Statistics::getCityCode, statistics.getCityCode())
+                    .eq(statistics.getTownCode() != null, Statistics::getTownCode, statistics.getTownCode())
+                    .eq(statistics.getConfirmTime() != null, Statistics::getConfirmTime, statistics.getConfirmTime());
             pages = getBaseMapper().selectPage(page, queryWrapper);
         } else {
             pages = getBaseMapper().selectPage(page, null);
         }
-        return pages == null || pages.getTotal() == 0 ?
-                new HttpResponseEntity<IPage<Statistics>>().resultIsNull(null) :
-                new HttpResponseEntity<IPage<Statistics>>().success(pages);
+        if ( pages == null || pages.getTotal() == 0 ) {
+            return new HttpResponseEntity<IPage<StatisticsDTO>>().resultIsNull(null);
+        }
+        IPage<StatisticsDTO> dtoPages = pages.convert(this::fillStatisticsDTO);
+        return new HttpResponseEntity<IPage<StatisticsDTO>>().success(dtoPages);
     }
 
     /**
@@ -122,18 +140,109 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return 查询结果
      */
     @Override
-    public HttpResponseEntity<Statistics> selectStatisticsById(String statisticsId) {
+    public HttpResponseEntity<StatisticsDTO> selectStatisticsById(String statisticsId) {
         if ( statisticsId == null ) {
-            return new HttpResponseEntity<Statistics>().resultIsNull(null);
+            return new HttpResponseEntity<StatisticsDTO>().resultIsNull(null);
         } else {
             QueryWrapper<Statistics> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("statistics_id", statisticsId);
             Statistics result = statisticsMapper.selectOne(queryWrapper);
             if ( result == null ) {
-                return new HttpResponseEntity<Statistics>().resultIsNull(null);
+                return new HttpResponseEntity<StatisticsDTO>().resultIsNull(null);
             } else {
-                return new HttpResponseEntity<Statistics>().success(result);
+                StatisticsDTO statisticsDTO = fillStatisticsDTO(result);
+                return new HttpResponseEntity<StatisticsDTO>().success(statisticsDTO);
             }
+        }
+    }
+
+    /**
+     * 查询省/市分项指标超标统计
+     *
+     * @param provinceCode 省份编码(为空时按省分，不为空时按市分)
+     * @return 分项指标超标统计
+     */
+    @Override
+    public HttpResponseEntity<List<ItemizedStatisticsDTO>> selectItemizedStatistics(String provinceCode) {
+        List<ItemizedStatisticsDTO> list;
+        if ( provinceCode == null || provinceCode.isEmpty() ) {
+            list = statisticsMapper.selectItemizedStatistics(null);
+            Map<Object,Object> provinceMap = gridClient.selectProvinceMap().getData();
+            list.forEach(item -> item.setProvinceName((String) provinceMap.get(item.getProvinceCode())));
+        } else {
+            list = statisticsMapper.selectItemizedStatistics(provinceCode);
+            Map<Object,Object> cityMap = gridClient.selectCitiesByProvinceCode(provinceCode).getData();
+            list.forEach(item -> item.setCityName((String) cityMap.get(item.getCityCode())));
+        }
+        if ( list.isEmpty() ) {
+            return new HttpResponseEntity<List<ItemizedStatisticsDTO>>().resultIsNull(null);
+        }
+        return new HttpResponseEntity<List<ItemizedStatisticsDTO>>().success(list);
+    }
+
+    /**
+     * 按月查询AQI指数超标统计
+     *
+     * @param provinceCode 省份编码(为空查全部)
+     * @return AQI指数等级分布统计
+     */
+    @Override
+    public HttpResponseEntity<List<MonthAQIExcessDTO>> selectMonthAQIExcess(String provinceCode) {
+        List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess(provinceCode);
+        if( list == null || list.isEmpty() ) {
+            return new HttpResponseEntity<List<MonthAQIExcessDTO>>().resultIsNull(null);
+        }
+        return new HttpResponseEntity<List<MonthAQIExcessDTO>>().success(list);
+    }
+
+    /**
+     * AQI指数等级分布统计
+     *
+     * @param provinceCode 省份编码(为空查全部)
+     * @return AQI指数等级分布统计列表
+     */
+    @Override
+    public HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution(String provinceCode) {
+        List<AQIDistributeDTO> list = statisticsMapper.selectAQIDistribution(provinceCode);
+        if( list == null || list.isEmpty() ) {
+            return new HttpResponseEntity<List<AQIDistributeDTO>>().resultIsNull(null);
+        }
+        return new HttpResponseEntity<List<AQIDistributeDTO>>().success(list);
+    }
+
+    private StatisticsDTO fillStatisticsDTO(Statistics statistics) {
+        // 异步调用服务
+        CompletableFuture<HttpResponseEntity<User>> userFuture = CompletableFuture.supplyAsync(() ->
+                userClient.selectUser(Map.of("userId", statistics.getUserId()))
+        );
+        CompletableFuture<HttpResponseEntity<User>> gmFuture = CompletableFuture.supplyAsync(() ->
+                userClient.selectUser(Map.of("userId", statistics.getGmUserId()))
+        );
+        CompletableFuture<HttpResponseEntity<Grid>> gridFuture = CompletableFuture.supplyAsync(() ->
+                gridClient.selectGridByTownCode(statistics.getTownCode())
+        );
+
+        // 等待所有调用完成
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(userFuture, gmFuture, gridFuture);
+
+        try {
+            allFutures.join(); // 等待所有异步任务完成
+
+            HttpResponseEntity<User> userResponse = userFuture.get();
+            HttpResponseEntity<User> gmResponse = gmFuture.get();
+            HttpResponseEntity<Grid> gridResponse = gridFuture.get();
+
+            if ( userResponse.getCode() != 200 || gmResponse.getCode() != 200 || gridResponse.getCode() != 200 ) {
+                return null;
+            }
+
+            StatisticsDTO statisticsDTO = new StatisticsDTO(statistics);
+            statisticsDTO.fillUserInfo(userResponse.getData(), gmResponse.getData());
+            statisticsDTO.fillGridInfo(gridResponse.getData());
+            return statisticsDTO;
+        } catch ( InterruptedException | ExecutionException e) {
+            logger.error(e.getMessage());
+            return null;
         }
     }
 

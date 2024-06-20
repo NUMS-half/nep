@@ -27,7 +27,7 @@ spring:
         - id: statistics-service
           uri: lb://statistics-service
           predicates:
-            - Path=/statistics/**
+            - Path=/statistics/**, /aqi/**
         - id: grid-service
           uri: lb://grid-service
           predicates:

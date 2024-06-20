@@ -4,6 +4,7 @@ import com.neusoft.neu24.entity.Grid;
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 import java.util.Map;
@@ -32,4 +33,8 @@ public interface GridMapper {
      * @return 完整的网格信息
      */
     List<Grid> selectGridByTownCode(@Param("townCode") String townCode);
+
+    List<Map<Object,Object>> selectCitiesMapByProvince(@Param("provinceCode") String provinceCode);
+
+    List<Map<Object,Object>> selectProvinceMap();
 }

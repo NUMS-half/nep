@@ -21,7 +21,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -173,7 +172,6 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
         IPage<Report> pages;
         LambdaQueryWrapper<Report> queryWrapper = new LambdaQueryWrapper<>();
         if ( report != null ) {
-
             queryWrapper.eq(report.getUserId() != null, Report::getUserId, report.getUserId())
                     .eq(report.getProvinceCode() != null, Report::getProvinceCode, report.getProvinceCode())
                     .eq(report.getCityCode() != null, Report::getCityCode, report.getCityCode())

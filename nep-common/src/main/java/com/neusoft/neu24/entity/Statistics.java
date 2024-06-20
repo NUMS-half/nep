@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import com.baomidou.mybatisplus.annotation.TableId;
 
@@ -90,6 +91,7 @@ public class Statistics implements Serializable {
     /**
      * 检测确认时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime confirmTime;
 
     /**

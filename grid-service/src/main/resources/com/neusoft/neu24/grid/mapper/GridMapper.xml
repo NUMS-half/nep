@@ -15,23 +15,24 @@
         WHERE town_id = #{townId} OR town_code = #{townCode}
     </update>
 
-    <select id="selectGridByTownCode" parameterType="java.lang.String" resultMap="gridResultMap" resultType="java.util.List">
+    <select id="selectGridByTownCode" parameterType="java.lang.String" resultMap="gridResultMap"
+            resultType="java.util.List">
         SELECT
-            p.province_id AS provinceId,
-            p.province_code AS provinceCode,
-            p.province_name AS provinceName,
-            c.city_id AS cityId,
-            c.city_code AS cityCode,
-            c.city_name AS cityName,
-            t.town_id AS townId,
-            t.town_code AS townCode,
-            t.town_name AS townName
+        p.province_id AS provinceId,
+        p.province_code AS provinceCode,
+        p.province_name AS provinceName,
+        c.city_id AS cityId,
+        c.city_code AS cityCode,
+        c.city_name AS cityName,
+        t.town_id AS townId,
+        t.town_code AS townCode,
+        t.town_name AS townName
         FROM
-            grid_town t
-                JOIN
-            grid_city c ON t.city_code = c.city_code
-                JOIN
-            grid_province p ON c.province_code = p.province_code
+        grid_town t
+        JOIN
+        grid_city c ON t.city_code = c.city_code
+        JOIN
+        grid_province p ON c.province_code = p.province_code
         <if test="townCode != null and townCode != ''">
             WHERE
             t.town_code = #{townCode}
@@ -45,6 +46,29 @@
         <result property="cityName" column="cityName"/>
         <result property="townCode" column="townCode"/>
         <result property="townName" column="townName"/>
+    </resultMap>
+
+    <select id="selectCitiesMapByProvince" resultMap="cityMap">
+        SELECT city_code AS cityCode,
+               city_name AS cityName
+        FROM grid_city
+        WHERE province_code = #{provinceCode}
+    </select>
+
+    <resultMap id="cityMap" type="java.util.Map">
+        <result column="city_code" />
+        <result column="city_name" />
+    </resultMap>
+
+    <select id="selectProvinceMap" resultMap="provinceMap">
+        SELECT province_code AS provinceCode,
+               province_name AS provinceName
+        FROM grid_province
+    </select>
+
+    <resultMap id="provinceMap" type="java.util.Map">
+        <result column="province_code" />
+        <result column="province_name" />
     </resultMap>
 
 </mapper>

@@ -11,7 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author Team-NEU-NanHu
@@ -67,7 +67,7 @@ public class Report implements Serializable {
     /**
      * 上报时间
      */
-    @JsonFormat( pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime reportTime;
 
     /**
@@ -78,6 +78,7 @@ public class Report implements Serializable {
     /**
      * 指派时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime assignTime;
 
     /**

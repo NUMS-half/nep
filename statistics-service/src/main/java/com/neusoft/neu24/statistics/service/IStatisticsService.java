@@ -63,15 +63,14 @@ public interface IStatisticsService extends IService<Statistics> {
 
     /**
      * 按月查询AQI指数超标统计
-     * @param provinceCode 省份编码(为空查全部)
-     * @return AQI指数等级分布统计
+     * @return AQI超标趋势统计
      */
-    HttpResponseEntity<List<MonthAQIExcessDTO>> selectMonthAQIExcess(String provinceCode);
+    HttpResponseEntity<List<MonthAQIExcessDTO>> selectAQIExcessTendency();
 
     /**
      * AQI指数等级分布统计
      * @param provinceCode 省份编码(为空查全部)
      * @return AQI指数等级分布统计列表
      */
-    HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution(String provinceCode);
+    HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution();
 }

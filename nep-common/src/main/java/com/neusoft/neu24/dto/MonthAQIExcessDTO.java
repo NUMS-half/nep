@@ -1,9 +1,6 @@
 package com.neusoft.neu24.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * 按月AQI超标统计信息类

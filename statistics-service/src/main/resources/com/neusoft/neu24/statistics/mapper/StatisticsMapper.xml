@@ -28,27 +28,20 @@
         </choose>
     </select>
 
-    <select id="selectMonthAQIExcess" parameterType="java.lang.String" resultType="com.neusoft.neu24.dto.MonthAQIExcessDTO">
+    <select id="selectMonthAQIExcess" resultType="com.neusoft.neu24.dto.MonthAQIExcessDTO">
         SELECT
         DATE_FORMAT(s.confirm_time, '%Y-%m') AS month,
-        SUM(IF(s.aqi_id > 2, 1, 0)) AS excessCount,
-        s.province_code AS provinceCode
+        SUM(IF(s.aqi_id > 2, 1, 0)) AS excessCount
         FROM
         statistics s
-        <if test="provinceCode != null and provinceCode != ''">
-            WHERE
-            s.province_code = #{provinceCode}
-        </if>
         GROUP BY
         DATE_FORMAT(s.confirm_time, '%Y-%m');
     </select>
 
-    <select id="selectAQIDistribution" parameterType="java.lang.String" resultType="com.neusoft.neu24.dto.AQIDistributeDTO">
-        SELECT aqi_id, COUNT(*) AS count
+    <select id="selectAQIDistribution" resultType="com.neusoft.neu24.dto.AQIDistributeDTO">
+        SELECT aqi_id   AS aqiId,
+               COUNT(*) AS count
         FROM statistics
-        <if test="provinceCode != null and provinceCode != ''">
-            WHERE province_code = #{provinceCode}
-        </if>
         GROUP BY aqi_id;
     </select>
 

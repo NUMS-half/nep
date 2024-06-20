@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.neusoft.neu24.client.AqiClient;
 import com.neusoft.neu24.client.GridClient;
 import com.neusoft.neu24.client.UserClient;
 import com.neusoft.neu24.dto.*;
@@ -24,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-
 
 /**
  * <b>统计信息服务实现类</b>
@@ -55,6 +54,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * 网格服务客户端
      */
     private final GridClient gridClient;
+
+    /**
+     * AQI客户端
+     */
+    private final AqiClient aqiClient;
 
     /**
      * <b>保存网格员测量的统计信息<b/>
@@ -182,13 +186,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
 
     /**
      * 按月查询AQI指数超标统计
-     *
-     * @param provinceCode 省份编码(为空查全部)
      * @return AQI指数等级分布统计
      */
     @Override
-    public HttpResponseEntity<List<MonthAQIExcessDTO>> selectMonthAQIExcess(String provinceCode) {
-        List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess(provinceCode);
+    public HttpResponseEntity<List<MonthAQIExcessDTO>> selectAQIExcessTendency() {
+        List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess();
         if( list == null || list.isEmpty() ) {
             return new HttpResponseEntity<List<MonthAQIExcessDTO>>().resultIsNull(null);
         }
@@ -197,16 +199,22 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
 
     /**
      * AQI指数等级分布统计
-     *
-     * @param provinceCode 省份编码(为空查全部)
      * @return AQI指数等级分布统计列表
      */
     @Override
-    public HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution(String provinceCode) {
-        List<AQIDistributeDTO> list = statisticsMapper.selectAQIDistribution(provinceCode);
+    public HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution() {
+        List<AQIDistributeDTO> list = statisticsMapper.selectAQIDistribution();
         if( list == null || list.isEmpty() ) {
             return new HttpResponseEntity<List<AQIDistributeDTO>>().resultIsNull(null);
         }
+        List<Aqi> aqiList = aqiClient.selectAllAqi().getData();
+        list.forEach(item -> {
+            Aqi aqi = aqiList.stream().filter(a -> a.getAqiId().equals(item.getAqiId())).findFirst().orElse(null);
+            if ( aqi != null ) {
+                item.setAqiLevel(aqi.getAqiLevel());
+                item.setAqiExplain(aqi.getAqiExplain());
+            }
+        });
         return new HttpResponseEntity<List<AQIDistributeDTO>>().success(list);
     }
 

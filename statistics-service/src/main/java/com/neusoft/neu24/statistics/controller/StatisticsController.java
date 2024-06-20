@@ -4,11 +4,13 @@ package com.neusoft.neu24.statistics.controller;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.neusoft.neu24.dto.AQIDistributeDTO;
 import com.neusoft.neu24.dto.ItemizedStatisticsDTO;
 import com.neusoft.neu24.dto.MonthAQIExcessDTO;
 import com.neusoft.neu24.dto.StatisticsDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
+import com.neusoft.neu24.statistics.service.IAqiService;
 import com.neusoft.neu24.statistics.service.IStatisticsService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -104,7 +106,7 @@ public class StatisticsController {
      * 查询省/市分项指标超标统计
      */
     @GetMapping(value = "/excess/item")
-    public HttpResponseEntity<List<ItemizedStatisticsDTO>> selectItemExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
+    public HttpResponseEntity<List<ItemizedStatisticsDTO>> getItemExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
         try {
             return statisticsService.selectItemizedStatistics(provinceCode);
         } catch ( Exception e ) {
@@ -115,12 +117,24 @@ public class StatisticsController {
     /**
      * 按月查询AQI指数超标统计
      */
-    @GetMapping(value = "/excess/month")
-    public HttpResponseEntity<List<MonthAQIExcessDTO>> selectMonthAQIExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
+    @GetMapping(value = "/excess/tendency")
+    public HttpResponseEntity<List<MonthAQIExcessDTO>> getMonthAQIExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
         try {
-            return statisticsService.selectMonthAQIExcess(provinceCode);
+            return statisticsService.selectAQIExcessTendency();
         } catch ( Exception e ) {
             return new HttpResponseEntity<List<MonthAQIExcessDTO>>().serverError(null);
+        }
+    }
+
+    /**
+     * AQI指数等级分布统计
+     */
+    @GetMapping(value = "/aqi/distribute")
+    public HttpResponseEntity<List<AQIDistributeDTO>> getAQIDistribute() {
+        try {
+            return statisticsService.selectAQIDistribution();
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<List<AQIDistributeDTO>>().serverError(null);
         }
     }
 

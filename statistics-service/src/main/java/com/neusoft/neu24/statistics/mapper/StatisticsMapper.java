@@ -32,15 +32,15 @@ public interface StatisticsMapper extends BaseMapper<Statistics> {
 
     /**
      * 按月查询AQI指数超标统计
-     * @param provinceCode 省份编码(为空查全部)
      * @return AQI指数等级分布统计
      */
-    List<MonthAQIExcessDTO> selectMonthAQIExcess(@Param("provinceCode") String provinceCode);
+    List<MonthAQIExcessDTO> selectMonthAQIExcess();
 
     /**
      * AQI指数等级分布统计
-     * @param provinceCode 省份编码(为空查全部)
      * @return AQI指数等级分布统计列表
      */
-    List<AQIDistributeDTO> selectAQIDistribution(@Param("provinceCode") String provinceCode);
+    List<AQIDistributeDTO> selectAQIDistribution();
+
+
 }

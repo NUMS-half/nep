@@ -218,6 +218,19 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         return new HttpResponseEntity<List<AQIDistributeDTO>>().success(list);
     }
 
+    /**
+     * @return
+     */
+    @Override
+    public HttpResponseEntity<StatisticsTotalDTO> selectStatisticsSummary() {
+        StatisticsTotalDTO totalDTO = statisticsMapper.selectStatisticsSummary();
+        Map<Object,Object> gridTotal = gridClient.selectGridTotal().getData();
+        totalDTO.setProvince((Integer) gridTotal.get("province"));
+        totalDTO.setCity((Integer) gridTotal.get("city"));
+        totalDTO.setTown((Integer) gridTotal.get("town"));
+        return new HttpResponseEntity<StatisticsTotalDTO>().success(totalDTO);
+    }
+
     private StatisticsDTO fillStatisticsDTO(Statistics statistics) {
         // 异步调用服务
         CompletableFuture<HttpResponseEntity<User>> userFuture = CompletableFuture.supplyAsync(() ->

@@ -1,16 +1,14 @@
 package com.neusoft.neu24.statistics.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.neusoft.neu24.dto.AQIDistributeDTO;
-import com.neusoft.neu24.dto.ItemizedStatisticsDTO;
-import com.neusoft.neu24.dto.MonthAQIExcessDTO;
-import com.neusoft.neu24.dto.StatisticsDTO;
+import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.Statistics;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -73,4 +71,6 @@ public interface IStatisticsService extends IService<Statistics> {
      * @return AQI指数等级分布统计列表
      */
     HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution();
+
+    HttpResponseEntity<StatisticsTotalDTO> selectStatisticsSummary();
 }

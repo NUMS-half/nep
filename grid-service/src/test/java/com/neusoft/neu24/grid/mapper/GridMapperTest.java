@@ -23,4 +23,9 @@ class GridMapperTest {
     void selectProvinceMap() {
         System.out.println(gridMapper.selectProvinceMap());
     }
+
+    @Test
+    void selectGridTotal() {
+        System.out.println(gridMapper.selectGridSum().values());
+    }
 }

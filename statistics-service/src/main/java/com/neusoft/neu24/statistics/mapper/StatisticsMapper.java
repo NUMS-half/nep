@@ -3,14 +3,18 @@ package com.neusoft.neu24.statistics.mapper;
 import com.neusoft.neu24.dto.AQIDistributeDTO;
 import com.neusoft.neu24.dto.ItemizedStatisticsDTO;
 import com.neusoft.neu24.dto.MonthAQIExcessDTO;
+import com.neusoft.neu24.dto.StatisticsTotalDTO;
 import com.neusoft.neu24.entity.Grid;
 import com.neusoft.neu24.entity.Statistics;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -42,5 +46,10 @@ public interface StatisticsMapper extends BaseMapper<Statistics> {
      */
     List<AQIDistributeDTO> selectAQIDistribution();
 
-
+    /**
+     * 查询总计信息
+     * @return 总计信息
+     */
+    @MapKey("total")
+    StatisticsTotalDTO selectStatisticsSummary();
 }

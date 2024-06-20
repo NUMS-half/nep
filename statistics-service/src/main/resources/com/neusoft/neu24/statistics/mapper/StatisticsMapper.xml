@@ -45,4 +45,14 @@
         GROUP BY aqi_id;
     </select>
 
+    <select id="selectStatisticsSummary" resultType="com.neusoft.neu24.dto.StatisticsTotalDTO">
+        SELECT COUNT(*)                              AS total,
+               SUM(IF(aqi_id &lt;= 2, 1, 0))         AS goodCount,
+               SUM(IF(aqi_id &gt; 2, 1, 0))          AS pollutionCount,
+               COUNT(DISTINCT province_code)         AS gridProvinceCount,
+               SUM(IF(city_code LIKE '%0100', 1, 0)) AS gridCapitalCityCount,
+               COUNT(DISTINCT city_code)             AS gridCityCount
+        FROM statistics
+    </select>
+
 </mapper>

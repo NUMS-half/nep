@@ -20,4 +20,7 @@ public interface GridClient {
 
     @GetMapping(value = "/grid/select/{townCode}")
     HttpResponseEntity<Grid> selectGridByTownCode(@PathVariable("townCode") String townCode);
+
+    @GetMapping(value = "/grid/select/sum")
+    HttpResponseEntity<Map<Object,Object>> selectGridTotal();
 }

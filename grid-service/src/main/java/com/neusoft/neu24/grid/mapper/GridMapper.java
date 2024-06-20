@@ -1,10 +1,9 @@
 package com.neusoft.neu24.grid.mapper;
 
+import com.neusoft.neu24.dto.StatisticsTotalDTO;
 import com.neusoft.neu24.entity.Grid;
-import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 import java.util.Map;
@@ -37,4 +36,6 @@ public interface GridMapper {
     List<Map<Object,Object>> selectCitiesMapByProvince(@Param("provinceCode") String provinceCode);
 
     List<Map<Object,Object>> selectProvinceMap();
+
+    StatisticsTotalDTO selectGridTotal();
 }

@@ -18,11 +18,13 @@ public class RedisConstants {
 
     public static final String CHAT_HISTORY = "nep:chat:history:";
 
-    public static final String GRID_KEY = "nep:grid:";
+    public static final String GRID_KEY = "nep:grid:town:";
 
     public static final String AQI_KEY = "nep:aqi:";
 
-    public static final String PROVINCE_MAP_KEY = "nep:grid:province:";
+    public static final String PROVINCE_MAP_KEY = "nep:grid:province:map";
+
+    public static final String GRID_TOTAL_KEY = "nep:grid:total";
 
     public static final String CITY_MAP_KEY = "nep:grid:city:";
 }

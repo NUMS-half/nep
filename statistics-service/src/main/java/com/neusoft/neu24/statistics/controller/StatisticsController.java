@@ -4,10 +4,7 @@ package com.neusoft.neu24.statistics.controller;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.neusoft.neu24.dto.AQIDistributeDTO;
-import com.neusoft.neu24.dto.ItemizedStatisticsDTO;
-import com.neusoft.neu24.dto.MonthAQIExcessDTO;
-import com.neusoft.neu24.dto.StatisticsDTO;
+import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
 import com.neusoft.neu24.statistics.service.IAqiService;
@@ -138,5 +135,13 @@ public class StatisticsController {
         }
     }
 
+    @GetMapping(value = "/summary")
+    public HttpResponseEntity<StatisticsTotalDTO> getStatisticsSummary() {
+        try {
+            return statisticsService.selectStatisticsSummary();
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<StatisticsTotalDTO>().serverError(null);
+        }
+    }
 }
 

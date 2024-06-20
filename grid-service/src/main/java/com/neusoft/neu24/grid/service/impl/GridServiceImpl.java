@@ -1,12 +1,12 @@
 package com.neusoft.neu24.grid.service.impl;
 
+import com.neusoft.neu24.dto.StatisticsTotalDTO;
 import com.neusoft.neu24.entity.Grid;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.grid.mapper.GridMapper;
 import com.neusoft.neu24.grid.service.IGridService;
 import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -83,7 +83,7 @@ public class GridServiceImpl implements IGridService {
      */
     @Override
     public HttpResponseEntity<Map<Object, Object>> selectCitiesMapByProvince(String provinceCode) {
-        Map<Object,Object> cacheMap = redisTemplate.opsForHash().entries(CITY_MAP_KEY + provinceCode);
+        Map<Object, Object> cacheMap = redisTemplate.opsForHash().entries(CITY_MAP_KEY + provinceCode);
         if ( cacheMap.isEmpty() ) {
             List<Map<Object, Object>> list = gridMapper.selectCitiesMapByProvince(provinceCode);
             Map<Object, Object> resultMap = list.stream()
@@ -101,6 +101,24 @@ public class GridServiceImpl implements IGridService {
         return new HttpResponseEntity<Map<Object, Object>>().success(cacheMap);
     }
 
+    /**
+     * 获取省市区的网格总数
+     * @return
+     */
+    @Override
+    public HttpResponseEntity<Map<Object, Object>> selectGridTotal() {
+        Map<Object, Object> cacheMap = redisTemplate.opsForHash().entries(GRID_TOTAL_KEY);
+        if ( cacheMap.isEmpty() ) {
+            StatisticsTotalDTO total = gridMapper.selectGridTotal();
+            Map<Object, Object> resultMap = new HashMap<>();
+            resultMap.put("province", total.getProvince());
+            resultMap.put("city", total.getCity());
+            resultMap.put("town", total.getTown());
+            redisTemplate.opsForHash().putAll(GRID_TOTAL_KEY, resultMap);
+            return new HttpResponseEntity<Map<Object, Object>>().success(resultMap);
+        }
+        return new HttpResponseEntity<Map<Object, Object>>().success(cacheMap);
+    }
 
     /**
      * @param grid 网格区/县信息
@@ -109,8 +127,8 @@ public class GridServiceImpl implements IGridService {
     @Override
     public HttpResponseEntity<Boolean> updateGridTown(Grid grid) {
         if ( gridMapper.updateGridTown(grid) ) {
-            // 删除缓存
-            redisTemplate.delete(GRID_KEY + grid.getTownCode());
+            // 更新缓存
+            redisTemplate.opsForValue().set(GRID_KEY + grid.getTownCode(), grid);
             return new HttpResponseEntity<Boolean>().success(true);
         }
         return HttpResponseEntity.UPDATE_FAIL;

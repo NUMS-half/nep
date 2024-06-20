@@ -29,6 +29,8 @@ public interface IGridService {
 
     HttpResponseEntity<Map<Object,Object>> selectCitiesMapByProvince(String provinceCode);
 
+    HttpResponseEntity<Map<Object,Object>> selectGridTotal();
+
     /**
      * 更新网格区/县信息
      * @param grid 网格区/县信息

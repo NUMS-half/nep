@@ -71,4 +71,10 @@
         <result column="province_name" />
     </resultMap>
 
+    <select id="selectGridTotal" resultType="com.neusoft.neu24.dto.StatisticsTotalDTO">
+        SELECT (SELECT COUNT(*) FROM grid_province) AS province,
+               (SELECT COUNT(*) FROM grid_city)     AS city,
+               (SELECT COUNT(*) FROM grid_town)     AS town;
+    </select>
+
 </mapper>

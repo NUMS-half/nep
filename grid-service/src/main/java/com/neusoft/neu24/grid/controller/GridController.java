@@ -58,6 +58,9 @@ public class GridController {
         return gridService.selectGridByTownCode(townCode);
     }
 
-
+    @GetMapping(value = "/select/sum")
+    public HttpResponseEntity<Map<Object,Object>> selectGridTotal() {
+        return gridService.selectGridTotal();
+    }
 
 }

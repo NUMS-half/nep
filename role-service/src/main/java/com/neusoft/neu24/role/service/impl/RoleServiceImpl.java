@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.entity.HttpResponseEntity;
+import com.neusoft.neu24.entity.ResponseEnum;
 import com.neusoft.neu24.entity.Role;
 import com.neusoft.neu24.role.mapper.RoleMapper;
 import com.neusoft.neu24.role.service.IRoleService;
@@ -80,9 +81,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
         try {
             return roleMapper.insert(role) > 0 ?
                     new HttpResponseEntity<Role>().success(role) :
-                    new HttpResponseEntity<Role>().addFail(null);
+                    new HttpResponseEntity<Role>().fail(ResponseEnum.ADD_FAIL);
         } catch ( DataAccessException e ) {
-            return new HttpResponseEntity<Role>().addFail(null);
+            return new HttpResponseEntity<Role>().fail(ResponseEnum.ADD_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Role>().serverError(null);
         }
@@ -97,14 +98,14 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
     @Override
     public HttpResponseEntity<Boolean> updateRole(Role role) {
         if ( role.getRoleId() == null ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         }
         try {
             return roleMapper.updateById(role) > 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
-                    HttpResponseEntity.UPDATE_FAIL;
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
@@ -122,9 +123,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
         try {
             return roleMapper.updateState(roleId, state) != 0 ?
                     new HttpResponseEntity<Boolean>().success(null) :
-                    HttpResponseEntity.UPDATE_FAIL;
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
@@ -139,14 +140,14 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
     @Override
     public HttpResponseEntity<Boolean> deleteRole(Integer roleId) {
         if ( roleId == null ) {
-            return HttpResponseEntity.DELETE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.DELETE_FAIL);
         }
         try {
             return roleMapper.updateState(roleId, -1) != 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
-                    HttpResponseEntity.DELETE_FAIL;
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.DELETE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
@@ -177,15 +178,15 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
     @Override
     public HttpResponseEntity<Boolean> updateRoleAuth(Integer roleId, List<Integer> nodeIds) {
         if ( roleId == null || nodeIds == null ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         }
         try {
             roleMapper.deleteRoleNodes(roleId);
             return roleMapper.insertRoleAuth(roleId, nodeIds) > 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
-                    HttpResponseEntity.UPDATE_FAIL;
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }

@@ -3,6 +3,7 @@ package com.neusoft.neu24.grid.service.impl;
 import com.neusoft.neu24.dto.StatisticsTotalDTO;
 import com.neusoft.neu24.entity.Grid;
 import com.neusoft.neu24.entity.HttpResponseEntity;
+import com.neusoft.neu24.entity.ResponseEnum;
 import com.neusoft.neu24.grid.mapper.GridMapper;
 import com.neusoft.neu24.grid.service.IGridService;
 import jakarta.annotation.Resource;
@@ -25,7 +26,7 @@ public class GridServiceImpl implements IGridService {
     private RedisTemplate<String, Object> redisTemplate;
 
     /**
-     * 根据区县编码获取完整的网格信息
+     * 根据 区县编码 获取完整的网格信息
      *
      * @param townCode 区县编码
      * @return 完整的网格信息
@@ -56,12 +57,15 @@ public class GridServiceImpl implements IGridService {
     }
 
     /**
-     * @return
+     * 获取省份编码和名称的Map映射
+     * @return 省份编码和名称的Map映射
      */
     @Override
     public HttpResponseEntity<Map<Object, Object>> selectProvinceMap() {
+        // 1. 在缓存中查找
         Map<Object, Object> cacheMap = redisTemplate.opsForHash().entries(PROVINCE_MAP_KEY);
         if ( cacheMap.isEmpty() ) {
+            // 2. 缓存中没有时，在数据库中查找
             List<Map<Object, Object>> list = gridMapper.selectProvinceMap();
             Map<Object, Object> resultMap = list.stream()
                     .collect(Collectors.toMap(
@@ -131,7 +135,7 @@ public class GridServiceImpl implements IGridService {
             redisTemplate.opsForValue().set(GRID_KEY + grid.getTownCode(), grid);
             return new HttpResponseEntity<Boolean>().success(true);
         }
-        return HttpResponseEntity.UPDATE_FAIL;
+        return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
     }
 
 }

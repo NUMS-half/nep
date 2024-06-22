@@ -44,8 +44,6 @@ public class ReportController {
     @PostMapping(value = "/add", headers = "Accept=application/json")
     public HttpResponseEntity<Report> addReport(@RequestBody Map<String, Object> map) {
         Report report = BeanUtil.fillBeanWithMap(map, new Report(), false);
-        report.setProvinceCode(report.getProvinceCode() + "0000");
-        report.setCityCode(report.getCityCode() + "00");
         report.setReportTime(LocalDateTime.now());
         report.setState(0);
         return reportService.addReport(report);

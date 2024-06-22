@@ -8,6 +8,7 @@ import com.neusoft.neu24.chat.mapper.MessageMapper;
 import com.neusoft.neu24.chat.service.IChatService;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Message;
+import com.neusoft.neu24.entity.ResponseEnum;
 import jakarta.annotation.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -53,10 +54,10 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message> impleme
                 }
                 return new HttpResponseEntity<Message>().success(message);
             } else {
-                return new HttpResponseEntity<Message>().addFail(null);
+                return new HttpResponseEntity<Message>().fail(ResponseEnum.ADD_FAIL);
             }
         } catch ( DataAccessException e ) {
-            return new HttpResponseEntity<Message>().addFail(null);
+            return new HttpResponseEntity<Message>().fail(ResponseEnum.ADD_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Message>().serverError(null);
         }

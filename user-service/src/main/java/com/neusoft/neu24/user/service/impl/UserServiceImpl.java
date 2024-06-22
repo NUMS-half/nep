@@ -59,21 +59,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public HttpResponseEntity<UserDTO> login(String username, String password) {
         // 判断用户名和密码是否为空
         if ( username == null || username.isEmpty() || password == null || password.isEmpty() ) {
-            return HttpResponseEntity.LOGIN_CONTENT_IS_NULL;
+            return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.LOGIN_CONTENT_IS_NULL);
         }
         try {
             User user = userMapper.selectOne(new QueryWrapper<User>().eq("username", username));
             if ( user != null ) {
                 Integer status = user.getStatus();
                 if ( status == 0 ) {
-                    return new HttpResponseEntity<>(ResponseEnum.FORBIDDEN, null);
+                    return new HttpResponseEntity<UserDTO>().error(ResponseEnum.FORBIDDEN);
                 } else if ( status == -1 ) {
-                    return new HttpResponseEntity<>(ResponseEnum.USER_NOT_EXIST, null);
+                    return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.USER_NOT_EXIST);
                 }
             }
             // 验证用户是否存在，且用户存在时验证密码是否正确
             if ( user == null || !user.getPassword().equals(password) ) {
-                return HttpResponseEntity.LOGIN_FAIL;
+                return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.LOGIN_FAIL);
             }
             // 登录成功
             return handleLogin(user);
@@ -94,7 +94,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 1. 校验手机号格式是否合规
         if ( !RegexUtils.isPhoneInvalid(phone) ) {
             // 不合规，返回错误
-            return new HttpResponseEntity<>(ResponseEnum.PHONE_INVALID, null);
+            return new HttpResponseEntity<>().fail(ResponseEnum.PHONE_INVALID);
         }
         // 2. 手机号合规，生成随机的6位验证码
         String smsCode = RandomUtil.randomNumbers(6);
@@ -143,13 +143,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 1. 判断验证时手机号码是否合规
         if ( !RegexUtils.isPhoneInvalid(phone) ) {
-            return new HttpResponseEntity<>(ResponseEnum.PHONE_INVALID, null);
+            return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.PHONE_INVALID);
         }
 
         // 2. 从Redis中获取验证码
         String code = stringRedisTemplate.opsForValue().get(LOGIN_SMS_KEY + phone);
         if ( code == null || !code.equals(smsCode) ) {
-            return new HttpResponseEntity<>(ResponseEnum.SMS_CODE_ERROR, null);
+            return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.SMS_CODE_ERROR);
         }
 
         // 3. 根据手机号查询用户，判断用户是否存在
@@ -157,9 +157,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if ( user != null ) {
             Integer status = user.getStatus();
             if ( status == 0 ) {
-                return new HttpResponseEntity<>(ResponseEnum.FORBIDDEN, null);
+                return new HttpResponseEntity<UserDTO>().error(ResponseEnum.FORBIDDEN);
             } else if ( status == -1 ) {
-                return new HttpResponseEntity<>(ResponseEnum.USER_NOT_EXIST, null);
+                return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.USER_NOT_EXIST);
             }
         }
 
@@ -167,7 +167,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if ( user == null ) {
             user = registerUserByPhone(phone);
             if ( user == null ) {
-                return HttpResponseEntity.REGISTER_FAIL;
+                return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.REGISTER_FAIL);
             }
         }
         // 登录成功 / 注册成功
@@ -212,10 +212,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public HttpResponseEntity<Boolean> changeStatus(User user, Integer status) {
         try {
             return userMapper.updateStatus(user.getUserId(), status) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(null) :
-                    HttpResponseEntity.UPDATE_FAIL;
+                    new HttpResponseEntity<Boolean>().success(true) :
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
@@ -232,10 +232,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public HttpResponseEntity<Boolean> changeGmState(String gmUserId, Integer gmState) {
         try {
             return userMapper.updateGmState(gmUserId, gmState) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(null) :
-                    HttpResponseEntity.UPDATE_FAIL;
+                    new HttpResponseEntity<Boolean>().success(true) :
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
@@ -267,7 +267,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Override
     public HttpResponseEntity<UserDTO> register(User user) {
         if ( !RegexUtils.isPhoneInvalid(user.getTelephone()) ) {
-            return new HttpResponseEntity<>(ResponseEnum.PHONE_INVALID, null);
+            return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.PHONE_INVALID);
         }
         try {
             user.setStatus(1);
@@ -275,10 +275,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             if ( userMapper.insert(user) != 0 ) {
                 return new HttpResponseEntity<UserDTO>().success(new UserDTO(user));
             } else {
-                return HttpResponseEntity.REGISTER_FAIL;
+                return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.REGISTER_FAIL);
             }
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.REGISTER_FAIL;
+            return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.REGISTER_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<UserDTO>().serverError(null);
         }
@@ -296,12 +296,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         try {
             if ( userMapper.updateById(user) != 0 ) {
                 refreshUserCache(user);
-                return new HttpResponseEntity<Boolean>().success(null);
+                return new HttpResponseEntity<Boolean>().success(true);
             } else {
-                return HttpResponseEntity.UPDATE_FAIL;
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
             }
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
@@ -441,7 +441,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
 
             // 4. 登录成功，返回用户信息
-            return new HttpResponseEntity<UserDTO>().loginSuccess(new UserDTO(user));
+            return new HttpResponseEntity<UserDTO>().success(ResponseEnum.LOGIN_SUCCESS, new UserDTO(user));
         } catch ( Exception e ) {
             return new HttpResponseEntity<UserDTO>().serverError(null);
         }

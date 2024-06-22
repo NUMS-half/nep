@@ -14,6 +14,6 @@ class StatisticsMapperTest {
 
     @Test
     void selectStatisticsSummary() {
-        System.out.println(statisticsMapper.selectStatisticsSummary().values());
+        System.out.println(statisticsMapper.selectStatisticsSummary());
     }
 }

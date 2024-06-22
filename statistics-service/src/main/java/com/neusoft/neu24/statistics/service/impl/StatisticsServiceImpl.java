@@ -16,10 +16,12 @@ import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -34,10 +36,11 @@ import java.util.concurrent.ExecutionException;
  */
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statistics> implements IStatisticsService {
 
-    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(StatisticsServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(StatisticsServiceImpl.class);
 
     @Resource
     private StatisticsMapper statisticsMapper;
@@ -76,13 +79,15 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                 rabbitTemplate.convertAndSend("user.exchange", "notification." + statistics.getUserId(), statistics);
                 return new HttpResponseEntity<Statistics>().success(statistics);
             } else {
-                return new HttpResponseEntity<Statistics>().addFail(null);
+                return new HttpResponseEntity<Statistics>().fail(ResponseEnum.ADD_FAIL);
             }
         } catch ( DataAccessException e ) {
-            return new HttpResponseEntity<Statistics>().addFail(null);
+            return new HttpResponseEntity<Statistics>().fail(ResponseEnum.ADD_FAIL);
         } catch ( AmqpException e ) {
-            return new HttpResponseEntity<Statistics>().serviceUnavailable(null);
+            logger.warn("AMQP 异常:{}", e.getMessage());
+            return new HttpResponseEntity<Statistics>().error(ResponseEnum.SERVICE_UNAVAILABLE);
         } catch ( Exception e ) {
+            logger.error("发生了未知错误:{}", e.getMessage());
             return new HttpResponseEntity<Statistics>().serverError(null);
         }
     }
@@ -98,9 +103,9 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         try {
             return statisticsMapper.updateById(statistics) != 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
-                    HttpResponseEntity.UPDATE_FAIL;
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(false);
         }
@@ -171,11 +176,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         List<ItemizedStatisticsDTO> list;
         if ( provinceCode == null || provinceCode.isEmpty() ) {
             list = statisticsMapper.selectItemizedStatistics(null);
-            Map<Object,Object> provinceMap = gridClient.selectProvinceMap().getData();
+            Map<Object, Object> provinceMap = gridClient.selectProvinceMap().getData();
             list.forEach(item -> item.setProvinceName((String) provinceMap.get(item.getProvinceCode())));
         } else {
             list = statisticsMapper.selectItemizedStatistics(provinceCode);
-            Map<Object,Object> cityMap = gridClient.selectCitiesByProvinceCode(provinceCode).getData();
+            Map<Object, Object> cityMap = gridClient.selectCitiesByProvinceCode(provinceCode).getData();
             list.forEach(item -> item.setCityName((String) cityMap.get(item.getCityCode())));
         }
         if ( list.isEmpty() ) {
@@ -186,12 +191,13 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
 
     /**
      * 按月查询AQI指数超标统计
+     *
      * @return AQI指数等级分布统计
      */
     @Override
     public HttpResponseEntity<List<MonthAQIExcessDTO>> selectAQIExcessTendency() {
         List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess();
-        if( list == null || list.isEmpty() ) {
+        if ( list == null || list.isEmpty() ) {
             return new HttpResponseEntity<List<MonthAQIExcessDTO>>().resultIsNull(null);
         }
         return new HttpResponseEntity<List<MonthAQIExcessDTO>>().success(list);
@@ -199,12 +205,13 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
 
     /**
      * AQI指数等级分布统计
+     *
      * @return AQI指数等级分布统计列表
      */
     @Override
     public HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution() {
         List<AQIDistributeDTO> list = statisticsMapper.selectAQIDistribution();
-        if( list == null || list.isEmpty() ) {
+        if ( list == null || list.isEmpty() ) {
             return new HttpResponseEntity<List<AQIDistributeDTO>>().resultIsNull(null);
         }
         List<Aqi> aqiList = aqiClient.selectAllAqi().getData();
@@ -224,15 +231,18 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Override
     public HttpResponseEntity<StatisticsTotalDTO> selectStatisticsSummary() {
         StatisticsTotalDTO totalDTO = statisticsMapper.selectStatisticsSummary();
-        Map<Object,Object> gridTotal = gridClient.selectGridTotal().getData();
+        Map<Object, Object> gridTotal = gridClient.selectGridTotal().getData();
         totalDTO.setProvince((Integer) gridTotal.get("province"));
         totalDTO.setCity((Integer) gridTotal.get("city"));
         totalDTO.setTown((Integer) gridTotal.get("town"));
         return new HttpResponseEntity<StatisticsTotalDTO>().success(totalDTO);
     }
 
+    /**
+     * 根据统计信息填充StatisticsDTO
+     */
     private StatisticsDTO fillStatisticsDTO(Statistics statistics) {
-        // 异步调用服务
+        // 1. 异步调用服务
         CompletableFuture<HttpResponseEntity<User>> userFuture = CompletableFuture.supplyAsync(() ->
                 userClient.selectUser(Map.of("userId", statistics.getUserId()))
         );
@@ -243,7 +253,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                 gridClient.selectGridByTownCode(statistics.getTownCode())
         );
 
-        // 等待所有调用完成
+        // 2. 等待所有调用完成
         CompletableFuture<Void> allFutures = CompletableFuture.allOf(userFuture, gmFuture, gridFuture);
 
         try {
@@ -261,7 +271,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
             statisticsDTO.fillUserInfo(userResponse.getData(), gmResponse.getData());
             statisticsDTO.fillGridInfo(gridResponse.getData());
             return statisticsDTO;
-        } catch ( InterruptedException | ExecutionException e) {
+        } catch ( InterruptedException | ExecutionException e ) {
             logger.error(e.getMessage());
             return null;
         }

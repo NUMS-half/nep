@@ -12,11 +12,16 @@ import com.neusoft.neu24.entity.*;
 import com.neusoft.neu24.report.mapper.ReportMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.report.service.IReportService;
+import io.netty.util.internal.StringUtil;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -28,9 +33,13 @@ import java.util.Map;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
+@Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> implements IReportService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReportServiceImpl.class);
 
     @Resource
     private ReportMapper reportMapper;
@@ -56,14 +65,27 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      */
     @Override
     public HttpResponseEntity<Report> addReport(Report report) {
+        // 1. 检查反馈信息中的区/县编码是否为空
+        if ( StringUtil.isNullOrEmpty(report.getTownCode()) ) {
+            return new HttpResponseEntity<Report>().fail(ResponseEnum.REGION_INVALID);
+        }
+        // 2. 远程调用检查该编号的区/县是否存在
+        if ( gridClient.selectGridByTownCode(report.getTownCode()).getData() == null ) {
+            return new HttpResponseEntity<Report>().fail(ResponseEnum.REGION_INVALID);
+        }
+        // 3. 检查预估等级是否合法
+        if ( report.getEstimatedLevel() == null || report.getEstimatedLevel() < 1 || report.getEstimatedLevel() > 6 ) {
+            return new HttpResponseEntity<Report>().fail(ResponseEnum.REPORT_FAIL_ESTIMATE_INVALID);
+        }
+        // 4. 插入反馈信息到数据库
         try {
-            if ( reportMapper.insert(report) != 0 ) {
+            if ( reportMapper.insert(report) > 0 ) {
                 return new HttpResponseEntity<Report>().success(report);
             } else {
-                return new HttpResponseEntity<Report>().addFail(null);
+                return new HttpResponseEntity<Report>().fail(ResponseEnum.ADD_FAIL);
             }
         } catch ( DataAccessException e ) {
-            return new HttpResponseEntity<Report>().addFail(null);
+            return new HttpResponseEntity<Report>().fail(ResponseEnum.ADD_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Report>().serverError(null);
         }
@@ -80,9 +102,9 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
         try {
             return reportMapper.updateById(report) != 0 ?
                     new HttpResponseEntity<Boolean>().success(null) :
-                    HttpResponseEntity.UPDATE_FAIL;
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
-            return HttpResponseEntity.UPDATE_FAIL;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
@@ -97,38 +119,42 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      */
     @Override
     public HttpResponseEntity<Boolean> assignGridManager(String reportId, String gridManagerId) {
-
-        Map<String, Object> map = Map.of("userId", gridManagerId,
-                                         "roleId", 2,
-                                         "gmStatus", 0);
+        // 1. 构建查询条件，远程调用查询网格员信息
+        Map<String, Object> map = Map.of(
+                "userId", gridManagerId, // 被指派的用户ID
+                "roleId", 2,             // 被指派的角色ID
+                "gmStatus", 0);          // 网格员状态为空闲
         try {
-            // 1. 查询网格员信息
             HttpResponseEntity<User> gridManager = userClient.selectUser(map);
             if ( gridManager.getCode() != 200 ) {
                 // 2. 网格员不存在，指派失败
-                return new HttpResponseEntity<>().assignFail(false, ResponseEnum.ASSIGN_FAIL_NO_GM);
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.ASSIGN_FAIL_NO_GM, false);
             }
 
             // 3. 查询已经存在的反馈信息
             Report report = reportMapper.selectById(reportId);
             // 如果反馈信息不存在或已经指派，则指派失败
             if ( report == null || report.getState() != 0 ) {
-                return new HttpResponseEntity<>().assignFail(false, ResponseEnum.ASSIGN_FAIL_HAS_ASSIGNED);
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.ASSIGN_FAIL_HAS_ASSIGNED, false);
             }
+            // 设置指派信息：指派网格员ID、指派时间、状态(1: 已指派)
             report.setGmUserId(gridManagerId);
             report.setAssignTime(LocalDateTimeUtil.now());
             report.setState(1);
 
-            // 4. 更新反馈信息为已指派
+            // 4. 更新反馈上报信息，进行指派
             if ( reportMapper.updateById(report) != 0 ) {
                 // 5. 指派成功，则发送消息到消息队列
+                // 发送到用户消息通知队列，通知网格员有新的反馈信息需要处理
                 rabbitTemplate.convertAndSend("user.exchange", "notification." + gridManagerId, report);
+                // 发送消息到指派成功队列，通知user-service更新网格员工作状态为 1:指派工作中
                 rabbitTemplate.convertAndSend("user.exchange", "assign.success", gridManagerId);
                 return new HttpResponseEntity<Boolean>().success(true);
             } else {
-                return new HttpResponseEntity<>().assignFail(false, ResponseEnum.ASSIGN_FAIL_UPDATE_FAIL);
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.ASSIGN_FAIL_UPDATE_FAIL, false);
             }
         } catch ( Exception e ) {
+            logger.error("指派网格员时发生异常: {}", e.getMessage());
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
     }
@@ -203,7 +229,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
     public HttpResponseEntity<Boolean> setReportState(String reportId, Integer state) {
         // 检查状态是否合法
         if ( state == null || state < 0 || state > 2 ) {
-            return HttpResponseEntity.STATE_INVALID;
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.STATE_INVALID);
         }
         try {
             Report report = reportMapper.selectById(reportId);
@@ -213,7 +239,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             report.setState(state);
             return reportMapper.updateState(report.getState(), report.getReportId()) != 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
-                    HttpResponseEntity.UPDATE_FAIL;
+                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }

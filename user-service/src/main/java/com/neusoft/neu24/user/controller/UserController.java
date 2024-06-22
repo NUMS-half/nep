@@ -153,7 +153,7 @@ public class UserController {
      * @return 查询结果
      */
     @PostMapping(value = "/select/gm", headers = "Accept=application/json")
-    public HttpResponseEntity<List<User>> selectGridManagers(@RequestBody Map<String, Object> gmInfo) {
+    public HttpResponseEntity<List<UserDTO>> selectGridManagers(@RequestBody Map<String, Object> gmInfo) {
         // 封装用户信息
         User user = BeanUtil.fillBeanWithMap(gmInfo, new User(), false);
         // 查询网格员信息

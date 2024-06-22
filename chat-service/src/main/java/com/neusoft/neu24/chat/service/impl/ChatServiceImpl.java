@@ -13,6 +13,7 @@ import jakarta.annotation.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +23,7 @@ import static com.neusoft.neu24.config.RedisConstants.CHAT_HISTORY;
 
 
 @Service
+@Transactional
 public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message> implements IChatService {
 
     @Resource
@@ -70,6 +72,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message> impleme
      * @return 历史消息列表
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<Message>> loadHistory(String userId) {
         try {
             // 用户ID不能为空

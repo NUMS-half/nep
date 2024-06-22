@@ -121,6 +121,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return 分页查询结果
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<IPage<StatisticsDTO>> selectStatisticsByPage(Statistics statistics, long current, long size) {
         IPage<Statistics> page = new Page<>(current, size);
         IPage<Statistics> pages;
@@ -149,6 +150,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return 查询结果
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<StatisticsDTO> selectStatisticsById(String statisticsId) {
         if ( statisticsId == null ) {
             return new HttpResponseEntity<StatisticsDTO>().resultIsNull(null);
@@ -172,6 +174,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return 分项指标超标统计
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<ItemizedStatisticsDTO>> selectItemizedStatistics(String provinceCode) {
         List<ItemizedStatisticsDTO> list;
         if ( provinceCode == null || provinceCode.isEmpty() ) {
@@ -195,6 +198,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return AQI指数等级分布统计
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<MonthAQIExcessDTO>> selectAQIExcessTendency() {
         List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess();
         if ( list == null || list.isEmpty() ) {
@@ -209,6 +213,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return AQI指数等级分布统计列表
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution() {
         List<AQIDistributeDTO> list = statisticsMapper.selectAQIDistribution();
         if ( list == null || list.isEmpty() ) {
@@ -226,9 +231,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     }
 
     /**
+     * 查询统计信息总览
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<StatisticsTotalDTO> selectStatisticsSummary() {
         StatisticsTotalDTO totalDTO = statisticsMapper.selectStatisticsSummary();
         Map<Object, Object> gridTotal = gridClient.selectGridTotal().getData();

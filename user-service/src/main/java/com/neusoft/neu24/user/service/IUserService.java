@@ -64,7 +64,7 @@ public interface IUserService extends IService<User> {
      * @param gridManager 网格员信息
      * @return 查询结果
      */
-    HttpResponseEntity<List<User>> selectGridManagers(User gridManager);
+    HttpResponseEntity<List<UserDTO>> selectGridManagers(User gridManager);
 
     /**
      * 发送短信验证码

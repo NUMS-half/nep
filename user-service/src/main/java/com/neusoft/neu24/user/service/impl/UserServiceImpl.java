@@ -18,9 +18,11 @@ import com.neusoft.neu24.user.utils.RegexUtils;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.HttpResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +37,7 @@ import static com.neusoft.neu24.config.RedisConstants.*;
  * @since 2024-05-21
  */
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
@@ -183,6 +186,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 分页查询结果
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<IPage<User>> selectUserByPage(User user, long current, long size) {
         IPage<User> page = new Page<>(current, size);
         IPage<User> pages;
@@ -313,6 +317,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 用户信息列表
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<User>> selectAllUser() {
         try {
             List<User> users = userMapper.selectList(new QueryWrapper<User>().ne("status", -1));
@@ -333,6 +338,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 查询结果
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<User> selectUser(User user) {
         if ( user == null ) {
             return new HttpResponseEntity<User>().resultIsNull(null);
@@ -368,9 +374,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 查询结果
      */
     @Override
-    public HttpResponseEntity<List<User>> selectGridManagers(User gridManager) {
+    @Transactional(readOnly = true)
+    public HttpResponseEntity<List<UserDTO>> selectGridManagers(User gridManager) {
         if ( gridManager == null ) {
-            return new HttpResponseEntity<List<User>>().resultIsNull(null);
+            return new HttpResponseEntity<List<UserDTO>>().resultIsNull(null);
         } else {
             try {
                 // 查询条件
@@ -386,12 +393,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
                 // 处理查询结果
                 if ( gridManagers == null || gridManagers.isEmpty() ) {
-                    return new HttpResponseEntity<List<User>>().resultIsNull(null);
+                    return new HttpResponseEntity<List<UserDTO>>().resultIsNull(null);
                 } else {
-                    return new HttpResponseEntity<List<User>>().success(gridManagers);
+                    List<UserDTO> gmManagerDTOS = new ArrayList<>();
+                    gridManagers.forEach(user -> gmManagerDTOS.add(new UserDTO(user)));
+                    return new HttpResponseEntity<List<UserDTO>>().success(gmManagerDTOS);
                 }
             } catch ( Exception e ) {
-                return new HttpResponseEntity<List<User>>().serverError(null);
+                return new HttpResponseEntity<List<UserDTO>>().serverError(null);
             }
         }
     }
@@ -407,9 +416,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         User user = new User();
         user.setTelephone(phone);
         // 用户手机注册时的默认信息
-        user.setUsername("nep_" + RandomUtil.randomString(8));
+        user.setUsername("nep_" + RandomUtil.randomString(8)); // 随机生成初始用户名
         user.setRealName("未设置");
-        user.setPassword("00000000");
+        user.setPassword("nep123456");
         user.setBirthday("2000-01-01");
         user.setGender(1);
         user.setRoleId(1);
@@ -447,7 +456,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
     }
 
-    private void refreshUserCache(User user) {
+    private void refreshUserCache(@NotNull User user) {
         user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
         Map<String, Object> userMap = convertUserToMap(user);
         stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
@@ -457,7 +466,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     /**
      * 将User对象转换为Map
      */
-    private Map<String, Object> convertUserToMap(User user) {
+    private Map<String, Object> convertUserToMap(@NotNull User user) {
         Map<String, Object> map = new HashMap<>();
 
         map.put("userId", user.getUserId());

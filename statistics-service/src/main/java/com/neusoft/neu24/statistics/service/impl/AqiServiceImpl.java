@@ -10,6 +10,7 @@ import io.lettuce.core.RedisCommandTimeoutException;
 import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -17,12 +18,14 @@ import java.util.Map;
 import static com.neusoft.neu24.config.RedisConstants.AQI_KEY;
 
 @Service
+@Transactional
 public class AqiServiceImpl extends ServiceImpl<AqiMapper, Aqi> implements IAqiService {
 
     @Resource
     private RedisTemplate<String, Aqi> redisTemplate;
 
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<Aqi>> getAllApiInfo() {
         try {
             List<Aqi> aqiList = getAqiList();

@@ -166,6 +166,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      * @return 查询结果
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<ReportDTO> selectReportById(String reportId) {
         if ( reportId == null ) {
             return new HttpResponseEntity<ReportDTO>().resultIsNull(null);
@@ -193,6 +194,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      * @return 分页查询结果
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(Report report, long current, long size) {
         IPage<Report> page = new Page<>(current, size);
         IPage<Report> pages;

@@ -12,7 +12,7 @@ public class RegexUtils {
      * @param phone 要校验的手机号
      * @return true:符合，false：不符合
      */
-    public static boolean isPhoneInvalid(String phone) {
+    public static boolean isPhoneValid(String phone) {
         return mismatch(phone, RegexPatterns.PHONE_REGEX);
     }
 

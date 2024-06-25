@@ -12,12 +12,11 @@ import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.user.config.JwtProperties;
 import com.neusoft.neu24.user.mapper.UserMapper;
 import com.neusoft.neu24.user.service.IUserService;
-import com.neusoft.neu24.user.utils.HttpUtils;
 import com.neusoft.neu24.user.utils.JwtUtil;
 import com.neusoft.neu24.user.utils.RegexUtils;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
-import org.apache.http.HttpResponse;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -95,7 +94,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public HttpResponseEntity<Object> sendSMSCode(String phone) {
 
         // 1. 校验手机号格式是否合规
-        if ( !RegexUtils.isPhoneInvalid(phone) ) {
+        if ( !RegexUtils.isPhoneValid(phone) ) {
             // 不合规，返回错误
             return new HttpResponseEntity<>().fail(ResponseEnum.PHONE_INVALID);
         }
@@ -145,7 +144,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public HttpResponseEntity<UserDTO> loginByPhone(String phone, String smsCode) {
 
         // 1. 判断验证时手机号码是否合规
-        if ( !RegexUtils.isPhoneInvalid(phone) ) {
+        if ( !RegexUtils.isPhoneValid(phone) ) {
             return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.PHONE_INVALID);
         }
 
@@ -270,7 +269,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     public HttpResponseEntity<UserDTO> register(User user) {
-        if ( !RegexUtils.isPhoneInvalid(user.getTelephone()) ) {
+        if ( !RegexUtils.isPhoneValid(user.getTelephone()) ) {
             return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.PHONE_INVALID);
         }
         try {
@@ -382,12 +381,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             try {
                 // 查询条件
                 LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-                queryWrapper.eq(gridManager.getGmProvinceCode() != null, User::getGmProvinceCode, gridManager.getGmProvinceCode())
-                        .eq(gridManager.getGmCityCode() != null, User::getGmCityCode, gridManager.getGmCityCode())
-                        .eq(gridManager.getGmTownCode() != null, User::getGmTownCode, gridManager.getGmTownCode())
-                        .eq(gridManager.getRoleId() != null, User::getRoleId, gridManager.getRoleId())
-                        .eq(gridManager.getStatus() != null, User::getStatus, gridManager.getStatus())
-                        .eq(User::getRoleId, gridManager.getUserId())
+                queryWrapper
+                        // 用户名条件
+                        .eq(StringUtils.isNotBlank(gridManager.getUsername()), User::getUsername, gridManager.getUsername())
+                        // 电话号码条件
+                        .eq(StringUtils.isNotBlank(gridManager.getTelephone()) && RegexUtils.isPhoneValid(gridManager.getTelephone()),
+                                User::getTelephone, gridManager.getTelephone())
+                        // 省份网格条件
+                        .eq(StringUtils.isNotBlank(gridManager.getGmProvinceCode()), User::getGmProvinceCode, gridManager.getGmProvinceCode())
+                        // 城市网格条件
+                        .eq(StringUtils.isNotBlank(gridManager.getGmCityCode()), User::getGmCityCode, gridManager.getGmCityCode())
+                        // 区/县网格条件
+                        .eq(StringUtils.isNotBlank(gridManager.getGmTownCode()), User::getGmTownCode, gridManager.getGmTownCode())
+                        // 网格员工作状态条件
+                        .eq(gridManager.getGmState() != null, User::getGmState, gridManager.getGmState())
+                        // 角色ID为网格员
+                        .eq(User::getRoleId, 1)
+                        // 状态不为已删除
                         .ne(User::getStatus, -1);
                 List<User> gridManagers = userMapper.selectList(queryWrapper);
 

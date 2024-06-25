@@ -6,12 +6,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.neusoft.neu24.client.AqiClient;
 import com.neusoft.neu24.client.GridClient;
+import com.neusoft.neu24.client.ReportClient;
 import com.neusoft.neu24.client.UserClient;
 import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.*;
 import com.neusoft.neu24.statistics.mapper.StatisticsMapper;
 import com.neusoft.neu24.statistics.service.IStatisticsService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +65,8 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      */
     private final AqiClient aqiClient;
 
+    private final ReportClient reportClient;
+
     /**
      * <b>保存网格员测量的统计信息<b/>
      *
@@ -70,11 +74,13 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return 保存结果
      */
     @Override
+    @GlobalTransactional
     public HttpResponseEntity<Statistics> saveStatistics(Statistics statistics) {
         try {
             if ( statisticsMapper.insert(statistics) != 0 ) {
                 // 1. 通知反馈服务更新反馈状态
-                rabbitTemplate.convertAndSend("statistics.exchange", "save.success", statistics.getReportId());
+                reportClient.setReportState(statistics.getReportId(), 5);
+//                rabbitTemplate.convertAndSend("statistics.exchange", "save.success", statistics.getReportId());
                 // 2. 上报信息更新成功，发送消息到公众监督员的消息队列
                 rabbitTemplate.convertAndSend("user.exchange", "notification." + statistics.getUserId(), statistics);
                 return new HttpResponseEntity<Statistics>().success(statistics);

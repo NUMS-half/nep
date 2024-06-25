@@ -239,9 +239,10 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
                 return new HttpResponseEntity<Boolean>().resultIsNull(null);
             }
             report.setState(state);
-            return reportMapper.updateState(report.getState(), report.getReportId()) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(true) :
-                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            reportMapper.updateState(report.getState(), report.getReportId());
+//            int i = 1 / 0;
+            return        new HttpResponseEntity<Boolean>().success(true);
+//                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }

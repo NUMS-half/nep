@@ -104,11 +104,11 @@ public class StatisticsController {
      */
     @GetMapping(value = "/excess/item")
     public HttpResponseEntity<List<ItemizedStatisticsDTO>> getItemExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
-        try {
+//        try {
             return statisticsService.selectItemizedStatistics(provinceCode);
-        } catch ( Exception e ) {
-            return new HttpResponseEntity<List<ItemizedStatisticsDTO>>().serverError(null);
-        }
+//        } catch ( Exception e ) {
+//            return new HttpResponseEntity<List<ItemizedStatisticsDTO>>().serverError(null);
+//        }
     }
 
     /**

@@ -17,6 +17,9 @@ public class ReportDTO {
     // 反馈者ID
     private String userId;
 
+    // 反馈者账号
+    private String username;
+
     // 反馈者姓名
     private String realName;
 
@@ -75,6 +78,7 @@ public class ReportDTO {
     }
 
     public void fillUserInfo(User user) {
+        this.username = user.getUsername();
         this.realName = user.getRealName();
         this.telephone = user.getTelephone();
     }

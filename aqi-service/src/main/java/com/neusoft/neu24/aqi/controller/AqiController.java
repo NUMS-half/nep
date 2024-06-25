@@ -1,8 +1,8 @@
-package com.neusoft.neu24.statistics.controller;
+package com.neusoft.neu24.aqi.controller;
 
 import com.neusoft.neu24.entity.Aqi;
 import com.neusoft.neu24.entity.HttpResponseEntity;
-import com.neusoft.neu24.statistics.service.IAqiService;
+import com.neusoft.neu24.aqi.service.IAqiService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 

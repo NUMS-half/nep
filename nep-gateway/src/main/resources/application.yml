@@ -27,7 +27,11 @@ spring:
         - id: statistics-service
           uri: lb://statistics-service
           predicates:
-            - Path=/statistics/**, /aqi/**
+            - Path=/statistics/**
+        - id: aqi-service
+          uri: lb://aqi-service
+          predicates:
+            - Path=/aqi/**
         - id: grid-service
           uri: lb://grid-service
           predicates:
@@ -45,6 +49,11 @@ spring:
           predicates:
             - Path=/role/**, /node/**
 
+logging:
+  file:
+    name: .logs/nep-gateway.log
+  level:
+    root: info
 
 nep:
   jwt:

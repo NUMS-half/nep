@@ -2,6 +2,8 @@ server:
   port: 8083
 
 logging:
+  file:
+    name: .logs/statistics-service.log
   level:
     root: info
     com.neusoft.neu24.statistics.mapper: debug

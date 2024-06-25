@@ -2,6 +2,8 @@ server:
   port: 8084
 
 logging:
+  file:
+    name: .logs/grid-service.log
   level:
     root: info
 #    com.neusoft.neu24.grid.mapper: debug

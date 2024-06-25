@@ -1,6 +1,7 @@
 package com.neusoft.neu24.user.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -9,15 +10,23 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.entity.*;
 import com.neusoft.neu24.dto.UserDTO;
+import com.neusoft.neu24.exceptions.LoginException;
+import com.neusoft.neu24.exceptions.QueryException;
+import com.neusoft.neu24.exceptions.SaveException;
+import com.neusoft.neu24.exceptions.UpdateException;
 import com.neusoft.neu24.user.config.JwtProperties;
 import com.neusoft.neu24.user.mapper.UserMapper;
 import com.neusoft.neu24.user.service.IUserService;
 import com.neusoft.neu24.user.utils.JwtUtil;
 import com.neusoft.neu24.user.utils.RegexUtils;
+import io.lettuce.core.RedisException;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -35,10 +44,13 @@ import static com.neusoft.neu24.config.RedisConstants.*;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Resource
     private UserMapper userMapper;
@@ -58,13 +70,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 登录结果
      */
     @Override
-    public HttpResponseEntity<UserDTO> login(String username, String password) {
-        // 判断用户名和密码是否为空
-        if ( username == null || username.isEmpty() || password == null || password.isEmpty() ) {
+    @Transactional(readOnly = true)
+    public HttpResponseEntity<UserDTO> login(String username, String password) throws LoginException {
+        // 判断用户名和密码是否为空/空串
+        if ( StringUtils.isEmpty(username) || StringUtils.isEmpty(password) ) {
             return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.LOGIN_CONTENT_IS_NULL);
         }
         try {
-            User user = userMapper.selectOne(new QueryWrapper<User>().eq("username", username));
+            // 按照账号查询用户信息
+            LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+            User user = userMapper.selectOne(queryWrapper.eq(User::getUsername, username));
             if ( user != null ) {
                 Integer status = user.getStatus();
                 if ( status == 0 ) {
@@ -78,9 +93,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.LOGIN_FAIL);
             }
             // 登录成功
+            logger.info("用户 {} 登录成功", username);
             return handleLogin(user);
         } catch ( Exception e ) {
-            return new HttpResponseEntity<UserDTO>().serverError(null);
+            throw new LoginException("登录失败", e);
         }
     }
 
@@ -105,7 +121,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         stringRedisTemplate.opsForValue().set(LOGIN_SMS_KEY + phone, smsCode, LOGIN_SMS_TTL, TimeUnit.MINUTES);
 
         // 4. 通过第三方API发送验证码到手机
-        System.out.println("验证码发送成功, 验证码为:{ " + smsCode + " }");
+        logger.info("为 {} 发送验证码成功, 验证码为:{}", phone, smsCode); // 未接入AQI时，控制台打印验证码代替发送
 //        String host = "https://gyytz.market.alicloudapi.com";
 //        String path = "/sms/smsSend";
 //        String method = "POST";
@@ -128,7 +144,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 //            return new HttpResponseEntity<>().success(response.getStatusLine().getStatusCode());
         return new HttpResponseEntity<>().success(null);
 //        } catch ( Exception e ) {
-//            return new HttpResponseEntity<>().serverError(null);
+//            throw new RuntimeException(e);
 //        }
 
     }
@@ -141,7 +157,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 登录/注册是否成功
      */
     @Override
-    public HttpResponseEntity<UserDTO> loginByPhone(String phone, String smsCode) {
+    @Transactional
+    public HttpResponseEntity<UserDTO> loginByPhone(String phone, String smsCode) throws SaveException, RedisException {
 
         // 1. 判断验证时手机号码是否合规
         if ( !RegexUtils.isPhoneValid(phone) ) {
@@ -165,15 +182,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             }
         }
 
-        // 用户不存在，则立即创建用户，进行注册
-        if ( user == null ) {
-            user = registerUserByPhone(phone);
+        try {
+            // 4. 用户不存在，则立即创建用户，进行注册
             if ( user == null ) {
-                return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.REGISTER_FAIL);
+                user = registerUserByPhone(phone);
+                if ( user == null ) {
+                    return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.REGISTER_FAIL);
+                }
             }
+            // 5. 登录成功 / 注册成功
+            logger.info("用户 {} 手机登录/注册成功", phone);
+            return handleLogin(user);
+        } catch ( RedisException e ) {
+            throw new RedisException(e);
+        } catch ( Exception e ) {
+            throw new SaveException("注册时发生异常", e);
         }
-        // 登录成功 / 注册成功
-        return handleLogin(user);
     }
 
     /**
@@ -186,22 +210,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @Transactional(readOnly = true)
-    public HttpResponseEntity<IPage<User>> selectUserByPage(User user, long current, long size) {
-        IPage<User> page = new Page<>(current, size);
-        IPage<User> pages;
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        if ( user != null ) {
-            queryWrapper
-                    .like(User::getUsername, user.getUsername())
-                    .or()
-                    .like(User::getRealName, user.getRealName())
-                    .or()
-                    .like(User::getTelephone, user.getTelephone());
+    public HttpResponseEntity<IPage<User>> selectUserByPage(User user, long current, long size) throws QueryException {
+        try {
+            // 获取页信息
+            IPage<User> page = new Page<>(current, size);
+            IPage<User> pages;
+            LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+            if ( user != null ) {
+                queryWrapper
+                        .like(User::getUsername, user.getUsername())
+                        .or()
+                        .like(User::getRealName, user.getRealName())
+                        .or()
+                        .like(User::getTelephone, user.getTelephone());
+            }
+            pages = getBaseMapper().selectPage(page, queryWrapper.ne(User::getStatus, -1));
+            return pages == null || pages.getTotal() == 0 ?
+                    new HttpResponseEntity<IPage<User>>().resultIsNull(null) :
+                    new HttpResponseEntity<IPage<User>>().success(pages);
+        } catch ( Exception e ) {
+            throw new QueryException("分页查询用户信息时发生异常", e);
         }
-        pages = getBaseMapper().selectPage(page, queryWrapper.ne(User::getStatus, -1));
-        return pages == null || pages.getTotal() == 0 ?
-                new HttpResponseEntity<IPage<User>>().resultIsNull(null) :
-                new HttpResponseEntity<IPage<User>>().success(pages);
     }
 
     /**
@@ -212,15 +241,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 是否修改成功
      */
     @Override
-    public HttpResponseEntity<Boolean> changeStatus(User user, Integer status) {
+    @Transactional
+    public HttpResponseEntity<Boolean> changeStatus(User user, Integer status) throws UpdateException {
+        // 判断用户信息和状态是否为空
+        if ( user == null || StringUtils.isEmpty(user.getUserId()) || status == null ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.CONTENT_IS_NULL);
+        }
+        // 判断状态是否合规(-1, 0, 1)
+        if ( status < -1 || status > 1 ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.STATE_INVALID);
+        }
         try {
-            return userMapper.updateStatus(user.getUserId(), status) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(true) :
-                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            if ( userMapper.updateStatus(user.getUserId(), status) != 0 ) {
+                logger.info("修改用户 {} 状态成功", user.getUserId());
+                return new HttpResponseEntity<Boolean>().success(true);
+            } else {
+                logger.info("修改用户 {} 状态失败", user.getUserId());
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            }
         } catch ( DataAccessException e ) {
             return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
-            return new HttpResponseEntity<Boolean>().serverError(null);
+            throw new UpdateException("修改用户状态异常", e);
         }
     }
 
@@ -232,15 +274,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 修改是否成功
      */
     @Override
-    public HttpResponseEntity<Boolean> changeGmState(String gmUserId, Integer gmState) {
+    @Transactional
+    public HttpResponseEntity<Boolean> changeGmState(String gmUserId, Integer gmState) throws UpdateException {
+        if ( StringUtils.isEmpty(gmUserId) || gmState == null ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.CONTENT_IS_NULL);
+        }
+        if ( gmState < 0 || gmState > 3 ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.STATE_INVALID);
+        }
         try {
-            return userMapper.updateGmState(gmUserId, gmState) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(true) :
-                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            if ( userMapper.updateGmState(gmUserId, gmState) != 0 ) {
+                logger.info("修改网格员 {} 工作状态为 {} 成功", gmUserId, gmState);
+                return new HttpResponseEntity<Boolean>().success(true);
+            } else {
+                logger.info("修改网格员 {} 工作状态为 {} 失败", gmUserId, gmState);
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            }
         } catch ( DataAccessException e ) {
             return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
-            return new HttpResponseEntity<Boolean>().serverError(null);
+            throw new UpdateException("修改网格员工作状态时发生异常", e);
         }
     }
 
@@ -251,13 +304,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 是否删除成功
      */
     @Override
-    public HttpResponseEntity<Boolean> deleteUser(User user) {
+    @Transactional
+    public HttpResponseEntity<Boolean> deleteUser(User user) throws UpdateException {
+        if ( user == null || StringUtils.isEmpty(user.getUserId()) ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.CONTENT_IS_NULL);
+        }
         try {
-            return userMapper.updateStatus(user.getUserId(), -1) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(true) :
-                    new HttpResponseEntity<>(ResponseEnum.DELETE_FAIL, false);
+            if ( userMapper.updateStatus(user.getUserId(), -1) != 0 ) {
+                logger.info("(逻辑)删除用户 {} 成功", user.getUserId());
+                return new HttpResponseEntity<Boolean>().success(true);
+            } else {
+                logger.info("(逻辑)删除用户 {} 失败", user.getUserId());
+                return new HttpResponseEntity<>(ResponseEnum.DELETE_FAIL, false);
+            }
         } catch ( Exception e ) {
-            return new HttpResponseEntity<Boolean>().serverError(false);
+            throw new UpdateException("删除用户时发生异常", e);
         }
     }
 
@@ -268,7 +329,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 是否注册成功
      */
     @Override
-    public HttpResponseEntity<UserDTO> register(User user) {
+    @Transactional
+    public HttpResponseEntity<UserDTO> register(User user) throws SaveException {
+        // 校验手机号合规性
         if ( !RegexUtils.isPhoneValid(user.getTelephone()) ) {
             return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.PHONE_INVALID);
         }
@@ -276,14 +339,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             user.setStatus(1);
             // 插入用户信息
             if ( userMapper.insert(user) != 0 ) {
+                logger.info("用户 {} 注册成功", user.getUserId());
                 return new HttpResponseEntity<UserDTO>().success(new UserDTO(user));
             } else {
+                logger.info("用户 {} 注册失败", user.getUserId());
                 return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.REGISTER_FAIL);
             }
         } catch ( DataAccessException e ) {
             return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.REGISTER_FAIL);
         } catch ( Exception e ) {
-            return new HttpResponseEntity<UserDTO>().serverError(null);
+            throw new SaveException("注册用户时发生异常", e);
         }
     }
 
@@ -294,19 +359,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 是否更新成功
      */
     @Override
-    public HttpResponseEntity<Boolean> updateUser(User user) {
+    public HttpResponseEntity<Boolean> updateUser(User user) throws UpdateException, RedisException {
+        // 传入的待更新用户信息/ID为空时，返回错误
+        if ( user == null || StringUtils.isEmpty(user.getUserId()) ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.CONTENT_IS_NULL);
+        }
         // 更新用户数据
         try {
             if ( userMapper.updateById(user) != 0 ) {
                 refreshUserCache(user);
+                logger.info("更新用户 {} 信息成功", user.getUserId());
                 return new HttpResponseEntity<Boolean>().success(true);
             } else {
+                logger.info("更新用户 {} 信息失败", user.getUserId());
                 return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
             }
         } catch ( DataAccessException e ) {
             return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+        } catch ( RedisException e ) {
+            throw new RedisException(e);
         } catch ( Exception e ) {
-            return new HttpResponseEntity<Boolean>().serverError(null);
+            throw new UpdateException("更新用户信息时发生异常", e);
         }
     }
 
@@ -317,7 +390,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @Transactional(readOnly = true)
-    public HttpResponseEntity<List<User>> selectAllUser() {
+    public HttpResponseEntity<List<User>> selectAllUser() throws QueryException {
         try {
             List<User> users = userMapper.selectList(new QueryWrapper<User>().ne("status", -1));
             if ( users == null || users.isEmpty() ) {
@@ -326,7 +399,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 return new HttpResponseEntity<List<User>>().success(users);
             }
         } catch ( Exception e ) {
-            return new HttpResponseEntity<List<User>>().serverError(null);
+            throw new QueryException("查询所有用户信息时发生异常", e);
         }
     }
 
@@ -338,13 +411,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @Transactional(readOnly = true)
-    public HttpResponseEntity<User> selectUser(User user) {
+    public HttpResponseEntity<User> selectUser(User user) throws QueryException {
         if ( user == null ) {
             return new HttpResponseEntity<User>().resultIsNull(null);
         } else {
             try {
                 // 优先查询 Redis 缓存
                 Map<Object, Object> cashUserMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + user.getUserId());
+                // 缓存中有数据时，直接返回未删除的角色
                 if ( !cashUserMap.isEmpty() ) {
                     User cashUser = BeanUtil.fillBeanWithMap(cashUserMap, new User(), false);
                     if ( cashUser.getStatus() != -1 ) {
@@ -353,15 +427,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 }
                 // 缓存中没有数据时再从数据库查询
                 QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("user_id", user.getUserId()).or().eq("username", user.getUsername()).ne("status", -1);
-                List<User> users = userMapper.selectList(queryWrapper);
-                if ( users == null || users.isEmpty() ) {
+                // 可根据用户ID、用户名、手机号查询用户信息
+                queryWrapper.eq("user_id", user.getUserId())
+                        .or()
+                        .eq("username", user.getUsername())
+                        .or()
+                        .eq("telephone", user.getTelephone())
+                        .ne("status", -1);
+                User resultUser = userMapper.selectOne(queryWrapper);
+                if ( resultUser == null ) {
                     return new HttpResponseEntity<User>().resultIsNull(null);
                 } else {
-                    return new HttpResponseEntity<User>().success(users.get(0));
+                    return new HttpResponseEntity<User>().success(resultUser);
                 }
             } catch ( Exception e ) {
-                return new HttpResponseEntity<User>().serverError(null);
+                throw new QueryException("查询指定用户信息时发生异常", e);
             }
         }
     }
@@ -410,7 +490,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                     return new HttpResponseEntity<List<UserDTO>>().success(gmManagerDTOS);
                 }
             } catch ( Exception e ) {
-                return new HttpResponseEntity<List<UserDTO>>().serverError(null);
+                throw new QueryException("条件查找网格员时发生异常", e);
             }
         }
     }
@@ -421,24 +501,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @param phone 手机号
      * @return 创建的用户
      */
-    private User registerUserByPhone(String phone) {
+    private User registerUserByPhone(String phone) throws SaveException {
         // 创建用户
         User user = new User();
         user.setTelephone(phone);
         // 用户手机注册时的默认信息
         user.setUsername("nep_" + RandomUtil.randomString(8)); // 随机生成初始用户名
-        user.setRealName("未设置");
+        user.setRealName("NEP公众监督员");
         user.setPassword("nep123456");
         user.setBirthday("2000-01-01");
-        user.setGender(1);
-        user.setRoleId(1);
-        user.setStatus(1);
+        user.setGender(1); // 默认性别为男
+        user.setRoleId(1); // 默认角色为公众监督员
+        user.setStatus(1); // 默认状态为启用
 
-        // 保存用户
-        if ( userMapper.insert(user) == 0 ) {
+        try {
+            // 保存手机注册的默认用户信息
+            return userMapper.insert(user) == 0 ? null : user;
+        } catch ( DataAccessException e ) {
             return null;
-        } else {
-            return user;
+        } catch ( Exception e ) {
+            throw new SaveException("手机注册时发生异常", e);
         }
     }
 
@@ -448,7 +530,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @param user 用户信息
      * @return 登录成功后的响应
      */
-    public HttpResponseEntity<UserDTO> handleLogin(User user) {
+    public HttpResponseEntity<UserDTO> handleLogin(User user) throws RedisException {
         try {
             // 登录校验通过后：
             // 1. 生成Token
@@ -462,15 +544,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             // 4. 登录成功，返回用户信息
             return new HttpResponseEntity<UserDTO>().success(ResponseEnum.LOGIN_SUCCESS, new UserDTO(user));
         } catch ( Exception e ) {
-            return new HttpResponseEntity<UserDTO>().serverError(null);
+            throw new RedisException("登录成功后，缓存用户数据处理发生异常", e);
         }
     }
 
-    private void refreshUserCache(@NotNull User user) {
-        user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
-        Map<String, Object> userMap = convertUserToMap(user);
-        stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
-        stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
+    /**
+     * 更新用户信息后，刷新缓存数据
+     */
+    private void refreshUserCache(@NotNull User user) throws RedisException {
+        try {
+            user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
+            Map<String, Object> userMap = convertUserToMap(user);
+            stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
+            stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
+        } catch ( Exception e ) {
+            throw new RedisException("更新用户信息后，刷新缓存数据发生异常", e);
+        }
     }
 
     /**
@@ -499,6 +588,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return map;
     }
 
+    /**
+     * 将对象转换为字符串，如果对象为null则返回null
+     */
     private String toStringOrNull(Object value) {
         return Optional.ofNullable(value).map(Object::toString).orElse(null);
     }

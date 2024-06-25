@@ -1,4 +1,4 @@
-package com.neusoft.neu24.statistics.utils;
+package com.neusoft.neu24.aqi.utils;
 
 import com.neusoft.neu24.entity.Aqi;
 import org.springframework.stereotype.Component;

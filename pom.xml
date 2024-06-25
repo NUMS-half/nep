@@ -20,6 +20,8 @@
         <module>chat-service</module>
         <module>role-service</module>
         <module>notification-service</module>
+        <module>aqi-service</module>
+        <module>nep-api</module>
     </modules>
 
     <parent>

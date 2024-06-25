@@ -1,4 +1,4 @@
-package com.neusoft.neu24.statistics.service;
+package com.neusoft.neu24.aqi.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.neusoft.neu24.entity.Aqi;

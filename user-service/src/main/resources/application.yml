@@ -8,6 +8,8 @@ server:
 
 # configure log output
 logging:
+  file:
+    name: .logs/user-service.log
   level:
     root: info
     com.neusoft.neu24.user.mapper: debug # print the executed SQL from Mybatis

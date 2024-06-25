@@ -2,6 +2,8 @@ server:
   port: 8085
 
 logging:
+  file:
+    name: .logs/role-service.log
   level:
     root: info
     com.neusoft.neu24.role.mapper: debug

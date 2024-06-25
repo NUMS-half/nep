@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
-import com.neusoft.neu24.statistics.service.IAqiService;
 import com.neusoft.neu24.statistics.service.IStatisticsService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -104,11 +103,11 @@ public class StatisticsController {
      */
     @GetMapping(value = "/excess/item")
     public HttpResponseEntity<List<ItemizedStatisticsDTO>> getItemExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
-//        try {
+        try {
             return statisticsService.selectItemizedStatistics(provinceCode);
-//        } catch ( Exception e ) {
-//            return new HttpResponseEntity<List<ItemizedStatisticsDTO>>().serverError(null);
-//        }
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<List<ItemizedStatisticsDTO>>().serverError(null);
+        }
     }
 
     /**

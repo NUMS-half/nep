@@ -25,6 +25,13 @@
             <version>1.0</version>
         </dependency>
 
+        <!-- 远程调用客户端依赖 -->
+        <dependency>
+            <groupId>com.neusoft.neu24</groupId>
+            <artifactId>nep-api</artifactId>
+            <version>1.0</version>
+        </dependency>
+
         <!-- Spring AI  -->
         <dependency>
             <groupId>org.springframework.ai</groupId>

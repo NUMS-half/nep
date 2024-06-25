@@ -5,10 +5,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
+import com.neusoft.neu24.exceptions.LoginException;
+import com.neusoft.neu24.exceptions.QueryException;
+import com.neusoft.neu24.exceptions.SaveException;
+import com.neusoft.neu24.exceptions.UpdateException;
 import com.neusoft.neu24.user.config.UserProperties;
 import com.neusoft.neu24.user.service.IUserService;
 import com.neusoft.neu24.utils.UserContext;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,14 +28,17 @@ import java.util.Map;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
+@Slf4j
 @RestController
 @RequestMapping("/user")
 public class UserController {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
     @Resource
     private IUserService userService;
 
-    // 配置热更新的注入
+    // Nacos热更新的配置注入(测试用)
     @Resource
     private UserProperties userProperties;
 
@@ -41,13 +51,17 @@ public class UserController {
     @PostMapping("/login")
     public HttpResponseEntity<UserDTO> login(@RequestBody Map<String, Object> loginInfo) {
         // TODO 未完成, 限制用户最大登录失败次数
-        System.out.println(userProperties.getLoginMaxTimes());
-
+        logger.info("Nacos热更新配置读取用户最大登录失败次数限制：{}",userProperties.getLoginMaxTimes());
         // 解析前端请求的用户数据
         String username = (String) loginInfo.get("username");
         String password = (String) loginInfo.get("password");
-        // 登录校验
-        return userService.login(username, password);
+        try {
+            // 登录校验
+            return userService.login(username, password);
+        } catch ( LoginException e ) {
+            logger.error("用户登录校验发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<UserDTO>().serverError(null);
+        }
     }
 
     /**
@@ -62,6 +76,7 @@ public class UserController {
             // 发送短信验证码
             return userService.sendSMSCode(phone);
         } catch ( Exception e ) {
+            logger.error("发送短信验证码发生异常: {}", e.getMessage());
             return new HttpResponseEntity<>().serverError(null);
         }
     }
@@ -77,8 +92,13 @@ public class UserController {
         // 解析前端请求的用户数据
         String phone = (String) loginInfo.get("phone");
         String smsCode = (String) loginInfo.get("smsCode");
-        // 登录校验
-        return userService.loginByPhone(phone, smsCode);
+        try {
+            // 登录校验
+            return userService.loginByPhone(phone, smsCode);
+        } catch ( LoginException e ) {
+            logger.error("用户手机登录校验发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<UserDTO>().serverError(null);
+        }
     }
 
     /**
@@ -91,8 +111,13 @@ public class UserController {
     public HttpResponseEntity<UserDTO> register(@RequestBody Map<String, Object> registerInfo) {
         // 封装用户信息
         User user = BeanUtil.fillBeanWithMap(registerInfo, new User(), false);
-        // 注册
-        return userService.register(user);
+        try {
+            // 注册
+            return userService.register(user);
+        } catch ( SaveException e ) {
+            logger.error("用户注册发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<UserDTO>().serverError(null);
+        }
     }
 
     /**
@@ -102,17 +127,22 @@ public class UserController {
      */
     @PostMapping("/select/all")
     public HttpResponseEntity<List<User>> selectAllUser() {
-        // 直接查询所有用户信息
-        return userService.selectAllUser();
+        try {
+            // 直接查询所有用户信息
+            return userService.selectAllUser();
+        } catch ( QueryException e ) {
+            logger.error("查询所有用户信息发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<List<User>>().serverError(null);
+        }
     }
 
     /**
      * <b>分页查询用户信息<b/>
      *
-     * @param map
-     * @param current
-     * @param size
-     * @return
+     * @param map 查询条件
+     * @param current 当前页
+     * @param size 每页显示数量
+     * @return 查询结果
      */
     @PostMapping(value = "/select/page", headers = "Accept=application/json")
     public HttpResponseEntity<IPage<User>> selectUserByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
@@ -123,7 +153,8 @@ public class UserController {
                 User user = BeanUtil.fillBeanWithMap(map, new User(), false);
                 return userService.selectUserByPage(user, current, size);
             }
-        } catch ( Exception e ) {
+        } catch ( QueryException e ) {
+            logger.error("分页查询用户信息发生异常: {}", e.getMessage());
             return new HttpResponseEntity<IPage<User>>().serverError(null);
         }
     }
@@ -136,14 +167,19 @@ public class UserController {
      */
     @PostMapping(value = "/select", headers = "Accept=application/json")
     public HttpResponseEntity<User> selectUser(@RequestBody Map<String, Object> userInfo) {
-        System.out.println(UserContext.getUser());
+        logger.info("【测试】查询用户信息时，从UserContext中取出userId: {}", UserContext.getUser());
         // 封装用户信息
         User user = new User();
         user.setUserId((String) userInfo.get("userId"));
         user.setUsername((String) userInfo.get("username"));
 
-        // 查询用户数据
-        return userService.selectUser(user);
+        try {
+            // 查询用户数据
+            return userService.selectUser(user);
+        } catch ( QueryException e ) {
+            logger.error("查询指定用户信息发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<User>().serverError(null);
+        }
     }
 
     /**
@@ -156,8 +192,13 @@ public class UserController {
     public HttpResponseEntity<List<UserDTO>> selectGridManagers(@RequestBody Map<String, Object> gmInfo) {
         // 封装用户信息
         User user = BeanUtil.fillBeanWithMap(gmInfo, new User(), false);
-        // 查询网格员信息
-        return userService.selectGridManagers(user);
+        try {
+            // 查询网格员信息
+            return userService.selectGridManagers(user);
+        } catch ( QueryException e ) {
+            logger.error("查询网格员信息发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<List<UserDTO>>().serverError(null);
+        }
     }
 
 
@@ -171,8 +212,13 @@ public class UserController {
     public HttpResponseEntity<Boolean> updateUser(@RequestBody Map<String, Object> userInfo) {
         // 封装用户信息
         User user = BeanUtil.fillBeanWithMap(userInfo, new User(), false);
-        // 更新用户信息
-        return userService.updateUser(user);
+        try {
+            // 更新用户信息
+            return userService.updateUser(user);
+        } catch ( UpdateException e ) {
+            logger.error("更新用户信息发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
     }
 
     /**
@@ -184,8 +230,13 @@ public class UserController {
      */
     @PutMapping(value = "/update/status", headers = "Accept=application/json")
     public HttpResponseEntity<Boolean> updateUserStatus(@RequestBody User user, @RequestParam("status") int status) {
-        // 更新用户状态
-        return userService.changeStatus(user, status);
+        try {
+            // 更新用户状态
+            return userService.changeStatus(user, status);
+        } catch ( UpdateException e ) {
+            logger.error("修改用户状态发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
     }
 
     /**
@@ -196,8 +247,13 @@ public class UserController {
      */
     @PutMapping(value = "/delete", headers = "Accept=application/json")
     public HttpResponseEntity<Boolean> deleteUser(@RequestBody User user) {
-        // 删除用户信息
-        return userService.deleteUser(user);
+        try {
+            // 删除用户信息
+            return userService.deleteUser(user);
+        } catch ( UpdateException e ) {
+            logger.error("删除用户信息发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
     }
 
 }

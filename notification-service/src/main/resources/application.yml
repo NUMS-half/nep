@@ -7,5 +7,7 @@ nep:
       ack-mode: manual
 
 logging:
+  file:
+    name: .logs/notification-service.log
   level:
     root: info

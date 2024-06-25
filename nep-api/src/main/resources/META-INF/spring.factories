@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.neusoft.neu24.config.MyBatisPlusConfig,\
+  com.neusoft.neu24.config.MvcConfig

@@ -1,11 +1,11 @@
-package com.neusoft.neu24.statistics.service.impl;
+package com.neusoft.neu24.aqi.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.entity.Aqi;
 import com.neusoft.neu24.entity.HttpResponseEntity;
-import com.neusoft.neu24.statistics.utils.AqiCalculator;
-import com.neusoft.neu24.statistics.mapper.AqiMapper;
-import com.neusoft.neu24.statistics.service.IAqiService;
+import com.neusoft.neu24.aqi.utils.AqiCalculator;
+import com.neusoft.neu24.aqi.mapper.AqiMapper;
+import com.neusoft.neu24.aqi.service.IAqiService;
 import io.lettuce.core.RedisCommandTimeoutException;
 import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.RedisTemplate;

@@ -10,6 +10,8 @@ import com.neusoft.neu24.client.ReportClient;
 import com.neusoft.neu24.client.UserClient;
 import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.*;
+import com.neusoft.neu24.exceptions.SaveException;
+import com.neusoft.neu24.exceptions.UpdateException;
 import com.neusoft.neu24.statistics.mapper.StatisticsMapper;
 import com.neusoft.neu24.statistics.service.IStatisticsService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -38,17 +40,10 @@ import java.util.concurrent.ExecutionException;
  */
 @Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statistics> implements IStatisticsService {
 
     private static final Logger logger = LoggerFactory.getLogger(StatisticsServiceImpl.class);
-
-    @Resource
-    private StatisticsMapper statisticsMapper;
-
-    @Resource
-    RabbitTemplate rabbitTemplate;
 
     /**
      * 用户服务客户端
@@ -65,7 +60,16 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      */
     private final AqiClient aqiClient;
 
+    /**
+     * 反馈服务客户端
+     */
     private final ReportClient reportClient;
+
+    @Resource
+    RabbitTemplate rabbitTemplate;
+
+    @Resource
+    private StatisticsMapper statisticsMapper;
 
     /**
      * <b>保存网格员测量的统计信息<b/>
@@ -78,8 +82,9 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     public HttpResponseEntity<Statistics> saveStatistics(Statistics statistics) {
         try {
             if ( statisticsMapper.insert(statistics) != 0 ) {
-                // 1. 通知反馈服务更新反馈状态
-                reportClient.setReportState(statistics.getReportId(), 5);
+                // 1. 反馈服务更新反馈状态
+                reportClient.setReportState(statistics.getReportId(), 2);
+
 //                rabbitTemplate.convertAndSend("statistics.exchange", "save.success", statistics.getReportId());
                 // 2. 上报信息更新成功，发送消息到公众监督员的消息队列
                 rabbitTemplate.convertAndSend("user.exchange", "notification." + statistics.getUserId(), statistics);
@@ -93,8 +98,8 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
             logger.warn("AMQP 异常:{}", e.getMessage());
             return new HttpResponseEntity<Statistics>().error(ResponseEnum.SERVICE_UNAVAILABLE);
         } catch ( Exception e ) {
-            logger.error("发生了未知错误:{}", e.getMessage());
-            return new HttpResponseEntity<Statistics>().serverError(null);
+            logger.error("保存统计信息失败:{}", e.getMessage());
+            throw new SaveException("保存统计信息失败", e);
         }
     }
 
@@ -105,15 +110,18 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      * @return 更新结果
      */
     @Override
+    @Transactional
     public HttpResponseEntity<Boolean> updateStatistics(Statistics statistics) {
         try {
             return statisticsMapper.updateById(statistics) != 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
                     new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( DataAccessException e ) {
+            logger.warn("更新统计信息失败:DataAccessException {}", e.getMessage());
             return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
-            return new HttpResponseEntity<Boolean>().serverError(false);
+            logger.error("统计信息更新失败:{}", e.getMessage(), e);
+            throw new UpdateException("更新统计信息失败", e);
         }
     }
 

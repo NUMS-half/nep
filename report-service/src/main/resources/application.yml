@@ -2,6 +2,8 @@ server:
   port: 8082
 
 logging:
+  file:
+    name: .logs/report-service.log
   level:
     root: info
     com.neusoft.neu24.report.mapper: debug

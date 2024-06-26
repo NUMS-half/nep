@@ -7,8 +7,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
+import com.neusoft.neu24.exceptions.SaveException;
 import com.neusoft.neu24.statistics.service.IStatisticsService;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,9 +26,12 @@ import java.util.Map;
  * @author Team-NEU-NanHu
  * @since 2024-05-21
  */
+@Slf4j
 @RestController
 @RequestMapping("/statistics")
 public class StatisticsController {
+
+    private static final Logger logger = LoggerFactory.getLogger(StatisticsController.class);
 
     @Resource
     IStatisticsService statisticsService;
@@ -43,7 +50,11 @@ public class StatisticsController {
             // 设置统计的确认时间
             statistics.setConfirmTime(LocalDateTimeUtil.now());
             return statisticsService.saveStatistics(statistics);
+        } catch ( SaveException e ) {
+            logger.error("保存统计信息时发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<Statistics>().serverError(null);
         } catch ( Exception e ) {
+            logger.error("保存统计信息时发生未知异常: {}", e.getMessage());
             return new HttpResponseEntity<Statistics>().serverError(null);
         }
     }

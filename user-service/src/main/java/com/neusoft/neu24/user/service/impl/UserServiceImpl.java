@@ -3,6 +3,7 @@ package com.neusoft.neu24.user.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -52,15 +53,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
+    private final JwtUtil jwtUtil;
+
+    private final JwtProperties jwtProperties;
+
     @Resource
     private UserMapper userMapper;
 
     @Resource
     StringRedisTemplate stringRedisTemplate;
-
-    private final JwtUtil jwtUtil;
-
-    private final JwtProperties jwtProperties;
 
     /**
      * 验证用户登录
@@ -89,7 +90,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 }
             }
             // 验证用户是否存在，且用户存在时验证密码是否正确
-            if ( user == null || !user.getPassword().equals(password) ) {
+            if ( user == null || !user.getPassword().equals(SecureUtil.md5(password)) ) {
                 return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.LOGIN_FAIL);
             }
             // 登录成功
@@ -335,6 +336,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if ( !RegexUtils.isPhoneValid(user.getTelephone()) ) {
             return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.PHONE_INVALID);
         }
+        user.setPassword(SecureUtil.md5(user.getPassword()));
         try {
             user.setStatus(1);
             // 插入用户信息
@@ -366,6 +368,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         // 更新用户数据
         try {
+            if (StringUtils.isNotBlank(user.getPassword())) {
+                user.setPassword(SecureUtil.md5(user.getPassword()));
+            }
             if ( userMapper.updateById(user) != 0 ) {
                 refreshUserCache(user);
                 logger.info("更新用户 {} 信息成功", user.getUserId());
@@ -476,7 +481,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                         // 网格员工作状态条件
                         .eq(gridManager.getGmState() != null, User::getGmState, gridManager.getGmState())
                         // 角色ID为网格员
-                        .eq(User::getRoleId, 1)
+                        .eq(User::getRoleId, 2)
                         // 状态不为已删除
                         .ne(User::getStatus, -1);
                 List<User> gridManagers = userMapper.selectList(queryWrapper);
@@ -508,7 +513,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 用户手机注册时的默认信息
         user.setUsername("nep_" + RandomUtil.randomString(8)); // 随机生成初始用户名
         user.setRealName("NEP公众监督员");
-        user.setPassword("nep123456");
+        user.setPassword(SecureUtil.md5("nep123456"));
         user.setBirthday("2000-01-01");
         user.setGender(1); // 默认性别为男
         user.setRoleId(1); // 默认角色为公众监督员

@@ -5,10 +5,12 @@ import com.neusoft.neu24.entity.Grid;
 import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.User;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
 public class ReportDTO {
 
     // 反馈信息ID

@@ -77,6 +77,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
         if ( report.getEstimatedLevel() == null || report.getEstimatedLevel() < 1 || report.getEstimatedLevel() > 6 ) {
             return new HttpResponseEntity<Report>().fail(ResponseEnum.REPORT_FAIL_ESTIMATE_INVALID);
         }
+        // TODO 校验该用户是否存在
         // 4. 插入反馈信息到数据库
         try {
             if ( reportMapper.insert(report) > 0 ) {

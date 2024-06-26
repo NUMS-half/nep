@@ -10,6 +10,7 @@ import com.neusoft.neu24.client.ReportClient;
 import com.neusoft.neu24.client.UserClient;
 import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.*;
+import com.neusoft.neu24.exceptions.QueryException;
 import com.neusoft.neu24.exceptions.SaveException;
 import com.neusoft.neu24.exceptions.UpdateException;
 import com.neusoft.neu24.statistics.mapper.StatisticsMapper;
@@ -81,25 +82,83 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @GlobalTransactional
     public HttpResponseEntity<Statistics> saveStatistics(Statistics statistics) {
         try {
-            if ( statisticsMapper.insert(statistics) != 0 ) {
-                // 1. 反馈服务更新反馈状态
-                reportClient.setReportState(statistics.getReportId(), 2);
+            // 1. 异步校验reportId是否存在
+            CompletableFuture<HttpResponseEntity<ReportDTO>> reportFuture = CompletableFuture.supplyAsync(() ->
+                    reportClient.selectReportById(statistics.getReportId())
+            );
 
-//                rabbitTemplate.convertAndSend("statistics.exchange", "save.success", statistics.getReportId());
-                // 2. 上报信息更新成功，发送消息到公众监督员的消息队列
-                rabbitTemplate.convertAndSend("user.exchange", "notification." + statistics.getUserId(), statistics);
-                return new HttpResponseEntity<Statistics>().success(statistics);
+            // 2. 异步校验检测数值合法性
+            CompletableFuture<HttpResponseEntity<Boolean>> aqiFuture = CompletableFuture.supplyAsync(() ->
+                    aqiClient.validateAqi(statistics)
+            );
+
+            // 3. 异步校验网格员是否存在
+            CompletableFuture<HttpResponseEntity<User>> userFuture = CompletableFuture.supplyAsync(() ->
+                    userClient.selectUser(Map.of("userId", statistics.getGmUserId()))
+            );
+
+            // 4. 同步获取所有异步操作的结果
+            CompletableFuture.allOf(reportFuture, aqiFuture, userFuture).join();
+            HttpResponseEntity<ReportDTO> reportResponse = reportFuture.get();
+            HttpResponseEntity<Boolean> aqiResponse = aqiFuture.get();
+            HttpResponseEntity<User> userResponse = userFuture.get();
+
+            // 校验reportId是否存在
+            if ( reportResponse.getCode() != 200 ) {
+                return new HttpResponseEntity<Statistics>().fail(ResponseEnum.REPORT_NOT_EXIST);
             } else {
-                return new HttpResponseEntity<Statistics>().fail(ResponseEnum.ADD_FAIL);
+                ReportDTO report = reportResponse.getData();
+                // 校验Report是否已经被确认
+                if ( report.getState() == 2 ) {
+                    return new HttpResponseEntity<Statistics>().fail(ResponseEnum.REPORT_HAS_CONFIRMED);
+                }
+                // 校验网格是否与Report的网格对应
+                if ( !report.getTownCode().equals(statistics.getTownCode()) ||
+                        !report.getCityCode().equals(statistics.getCityCode()) ||
+                        !report.getProvinceCode().equals(statistics.getProvinceCode()) ) {
+                    return new HttpResponseEntity<Statistics>().fail(ResponseEnum.REGION_INVALID);
+                }
+                // 校验该用户是否存在
+                if ( !report.getUserId().equals(statistics.getUserId()) ) {
+                    return new HttpResponseEntity<Statistics>().fail(ResponseEnum.USER_NOT_EXIST);
+                }
             }
+
+            // 校验检测数值合法性
+            if ( aqiResponse.getCode() != 200 ) {
+                return new HttpResponseEntity<Statistics>().fail(ResponseEnum.STATISTICS_VALUE_INVALID);
+            }
+
+            // 校验网格员是否存在
+            if ( userResponse.getCode() != 200 ) {
+                return new HttpResponseEntity<Statistics>().fail(ResponseEnum.USER_NOT_EXIST);
+            }
+
+
+            // 如果所有校验都通过，保存统计信息
+            logger.info("数据合法性校验通过，开始保存统计信息");
+
+            statisticsMapper.insert(statistics);
+            // 1. 反馈服务更新反馈状态(同步)
+            reportClient.setReportState(statistics.getReportId(), 2);
+//                // 1. 通知反馈服务更新反馈状态(异步)
+//            rabbitTemplate.convertAndSend("statistics.exchange", "save.success", statistics.getReportId());
+            // 2. 上报信息更新成功，发送消息到公众监督员的消息队列
+            rabbitTemplate.convertAndSend("user.exchange", "notification." + statistics.getUserId(), statistics);
+            logger.info("统计信息: {} 保存成功", statistics.getStatisticsId());
+            return new HttpResponseEntity<Statistics>().success(statistics);
+        } catch ( InterruptedException | ExecutionException e ) {
+            logger.error("异步检查输入合法性时发生异常，实测信息: {} 保存失败:{}", statistics.getStatisticsId(), e.getMessage());
+            throw new SaveException("异步检查输入合法性时发生异常", e);
         } catch ( DataAccessException e ) {
-            return new HttpResponseEntity<Statistics>().fail(ResponseEnum.ADD_FAIL);
+            logger.warn("数据输入超出数据库限制，实测信息: {} 保存失败:{}", statistics.getStatisticsId(), e.getMessage());
+            throw new SaveException("保存实测信息时,数据输入超出数据库限制", e);
         } catch ( AmqpException e ) {
-            logger.warn("AMQP 异常:{}", e.getMessage());
-            return new HttpResponseEntity<Statistics>().error(ResponseEnum.SERVICE_UNAVAILABLE);
+            logger.warn("AMQP 异常:{}, 实测信息保存失败", e.getMessage());
+            throw new SaveException("保存实测信息时,AMQP发生异常", e);
         } catch ( Exception e ) {
-            logger.error("保存统计信息失败:{}", e.getMessage());
-            throw new SaveException("保存统计信息失败", e);
+            logger.error("保存实测信息: {} 时发生异常: {}", statistics.getStatisticsId(), e.getMessage());
+            throw new SaveException("保存实测信息时发生异常", e);
         }
     }
 
@@ -137,24 +196,29 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Override
     @Transactional(readOnly = true)
     public HttpResponseEntity<IPage<StatisticsDTO>> selectStatisticsByPage(Statistics statistics, long current, long size) {
-        IPage<Statistics> page = new Page<>(current, size);
-        IPage<Statistics> pages;
-        LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
-        // 可通过省市区和确认时间四种条件查询
-        if ( statistics != null ) {
-            queryWrapper.eq(statistics.getProvinceCode() != null, Statistics::getProvinceCode, statistics.getProvinceCode())
-                    .eq(statistics.getCityCode() != null, Statistics::getCityCode, statistics.getCityCode())
-                    .eq(statistics.getTownCode() != null, Statistics::getTownCode, statistics.getTownCode())
-                    .eq(statistics.getConfirmTime() != null, Statistics::getConfirmTime, statistics.getConfirmTime());
-            pages = getBaseMapper().selectPage(page, queryWrapper);
-        } else {
-            pages = getBaseMapper().selectPage(page, null);
+        try {
+            IPage<Statistics> page = new Page<>(current, size);
+            IPage<Statistics> pages;
+            LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
+            // 可通过省市区和确认时间四种条件查询
+            if ( statistics != null ) {
+                queryWrapper.eq(statistics.getProvinceCode() != null, Statistics::getProvinceCode, statistics.getProvinceCode())
+                        .eq(statistics.getCityCode() != null, Statistics::getCityCode, statistics.getCityCode())
+                        .eq(statistics.getTownCode() != null, Statistics::getTownCode, statistics.getTownCode())
+                        .eq(statistics.getConfirmTime() != null, Statistics::getConfirmTime, statistics.getConfirmTime());
+                pages = getBaseMapper().selectPage(page, queryWrapper);
+            } else {
+                pages = getBaseMapper().selectPage(page, null);
+            }
+            if ( pages == null || pages.getTotal() == 0 ) {
+                return new HttpResponseEntity<IPage<StatisticsDTO>>().resultIsNull(null);
+            }
+            IPage<StatisticsDTO> dtoPages = pages.convert(this::fillStatisticsDTO);
+            return new HttpResponseEntity<IPage<StatisticsDTO>>().success(dtoPages);
+        } catch ( Exception e ) {
+            logger.error("分页查询统计信息失败:{}", e.getMessage());
+            throw new QueryException("分页查询统计信息时发生异常", e);
         }
-        if ( pages == null || pages.getTotal() == 0 ) {
-            return new HttpResponseEntity<IPage<StatisticsDTO>>().resultIsNull(null);
-        }
-        IPage<StatisticsDTO> dtoPages = pages.convert(this::fillStatisticsDTO);
-        return new HttpResponseEntity<IPage<StatisticsDTO>>().success(dtoPages);
     }
 
     /**
@@ -246,6 +310,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
 
     /**
      * 查询统计信息总览
+     *
      * @return
      */
     @Override

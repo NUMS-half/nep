@@ -48,12 +48,16 @@ public enum ResponseEnum {
 
     // 4.反馈上报
     REPORT_FAIL_ESTIMATE_INVALID(303, "预估AQI等级不合法"),
+    REPORT_NOT_EXIST(303, "反馈信息不存在"),
 
     // 5.反馈指派
-    ASSIGN_FAIL_HAS_ASSIGNED(312, "该反馈信息【已被指派】或【已完成实测】"),
-    ASSIGN_FAIL_UPDATE_FAIL(313, "反馈信息更新失败，指派失败"),
-    ASSIGN_FAIL_NO_GM(302, "无匹配的网格员"),
+    ASSIGN_FAIL_HAS_ASSIGNED(304, "该反馈信息【已被指派】或【已完成实测】"),
+    ASSIGN_FAIL_UPDATE_FAIL(304, "反馈信息更新失败，指派失败"),
+    ASSIGN_FAIL_NO_GM(304, "无匹配的网格员"),
 
+    // 6.实测
+    STATISTICS_VALUE_INVALID(305, "实测值不合法"),
+    REPORT_HAS_CONFIRMED(305, "该反馈信息【已被确认】"),
 
     BAD_REQUEST(400, "请求失败"),
     UNAUTHORIZED(401, "未授权的请求，请登录后重试"),

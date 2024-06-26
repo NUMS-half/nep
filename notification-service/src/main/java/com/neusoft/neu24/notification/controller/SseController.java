@@ -1,6 +1,7 @@
 package com.neusoft.neu24.notification.controller;
 
 import com.rabbitmq.client.Channel;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.ExchangeTypes;
@@ -19,14 +20,16 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @RestController
 @RequestMapping("/sse")
 public class SseController {
 
-    // 日志记录器
     private static final Logger logger = LoggerFactory.getLogger(SseController.class);
 
-    // SseEmitter集合
+    /**
+     * SseEmitter集合
+     */
     private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
 
@@ -41,19 +44,19 @@ public class SseController {
         SseEmitter emitter = new SseEmitter(0L); // no timeout
         emitters.put(userId, emitter);
 
-        logger.info("Connect established: User {} setup.", userId);
+        logger.info("【连接建立】成功,用户 {} 已连接", userId);
 
         emitter.onCompletion(() -> {
             emitters.remove(userId);
-            logger.info("Connect closed by completion: User {}.", userId);
+            logger.info("【连接关闭】连接完成,用户: {} 断开连接", userId);
         });
         emitter.onTimeout(() -> {
             emitters.remove(userId);
-            logger.info("Connect closed by timeout: User {}.", userId);
+            logger.info("【连接关闭】连接超时,用户: {} 断开连接", userId);
         });
         emitter.onError(e -> {
             emitters.remove(userId);
-            logger.error("Connect error by error : User {}.", userId);
+            logger.error("【连接关闭】发生异常,用户 {} 断开连接", userId);
         });
 
         return emitter;
@@ -65,7 +68,7 @@ public class SseController {
     @GetMapping(value = "/close/{userId}", produces = {MediaType.TEXT_EVENT_STREAM_VALUE})
     public void close(@PathVariable("userId") String userId) {
         emitters.remove(userId);
-        logger.info("User {} Connect closed.", userId);
+        logger.info("【连接关闭】用户 {} 主动断开连接", userId);
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -84,7 +87,7 @@ public class SseController {
 
         if ( emitter != null ) {
             try {
-                logger.info("Received message: {} from {}", message, routingKey);
+                logger.info("从消息队列收到: 来自 {} 的消息 {}", routingKey, message);
                 emitter.send(SseEmitter.event().name("message").data(message, MediaType.APPLICATION_JSON));
                 channel.basicAck(deliveryTag, false); // 消息确认
             } catch ( IOException e ) {
@@ -92,14 +95,14 @@ public class SseController {
                 try {
                     channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
                 } catch ( IOException ioException ) {
-                    logger.error("Failed to Nack message", ioException);
+                    logger.error("拒绝消费消息失败", ioException);
                 }
             }
         } else {
             try {
                 channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
             } catch ( IOException e ) {
-                logger.error("Failed to Nack message", e);
+                logger.error("拒绝消费消息失败", e);
             }
         }
 

@@ -289,10 +289,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 return new HttpResponseEntity<Boolean>().success(true);
             } else {
                 logger.info("修改网格员 {} 工作状态为 {} 失败", gmUserId, gmState);
-                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+                throw new UpdateException("修改网格员工作状态失败");
             }
-        } catch ( DataAccessException e ) {
-            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {
             throw new UpdateException("修改网格员工作状态时发生异常", e);
         }

@@ -6,6 +6,9 @@ import com.neusoft.neu24.gateway.config.JwtProperties;
 import com.neusoft.neu24.gateway.utils.JwtUtil;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -24,9 +27,12 @@ import java.util.Map;
 
 import static com.neusoft.neu24.config.RedisConstants.LOGIN_TOKEN;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthGlobalFilter.class);
 
     /**
      * 请求路径配置信息(构造函数注入)
@@ -73,6 +79,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         if ( response.getCode() != 200 ) {
             ServerHttpResponse serverHttpResponse = exchange.getResponse();
             serverHttpResponse.setStatusCode(HttpStatus.UNAUTHORIZED);
+            logger.warn("【网关】已拦截未授权的请求: {}", request.getPath());
             return serverHttpResponse.setComplete();
         }
         String userId = response.getData();

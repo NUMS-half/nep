@@ -7,7 +7,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Statistics;
+import com.neusoft.neu24.exceptions.QueryException;
 import com.neusoft.neu24.exceptions.SaveException;
+import com.neusoft.neu24.exceptions.UpdateException;
 import com.neusoft.neu24.statistics.service.IStatisticsService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +68,11 @@ public class StatisticsController {
      */
     @GetMapping(value = "/select/{statisticsId}")
     public HttpResponseEntity<StatisticsDTO> selectStatisticsById(@PathVariable("statisticsId") String statisticsId) {
-        return statisticsService.selectStatisticsById(statisticsId);
+        try {
+            return statisticsService.selectStatisticsById(statisticsId);
+        } catch ( QueryException e ) {
+            return new HttpResponseEntity<StatisticsDTO>().serverError(null);
+        }
     }
 
     /**
@@ -87,7 +93,7 @@ public class StatisticsController {
                 Statistics statistics = BeanUtil.fillBeanWithMap(map, new Statistics(), false);
                 return statisticsService.selectStatisticsByPage(statistics, current, size);
             }
-        } catch ( Exception e ) {
+        } catch ( QueryException e ) {
             return new HttpResponseEntity<IPage<StatisticsDTO>>().serverError(null);
         }
     }
@@ -104,7 +110,7 @@ public class StatisticsController {
             // 将Map转换为Statistics对象
             Statistics statistics = BeanUtil.fillBeanWithMap(map, new Statistics(), false);
             return statisticsService.updateStatistics(statistics);
-        } catch ( Exception e ) {
+        } catch ( UpdateException e ) {
             return new HttpResponseEntity<Boolean>().serverError(false);
         }
     }
@@ -116,7 +122,7 @@ public class StatisticsController {
     public HttpResponseEntity<List<ItemizedStatisticsDTO>> getItemExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
         try {
             return statisticsService.selectItemizedStatistics(provinceCode);
-        } catch ( Exception e ) {
+        } catch ( QueryException e ) {
             return new HttpResponseEntity<List<ItemizedStatisticsDTO>>().serverError(null);
         }
     }
@@ -128,7 +134,7 @@ public class StatisticsController {
     public HttpResponseEntity<List<MonthAQIExcessDTO>> getMonthAQIExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
         try {
             return statisticsService.selectAQIExcessTendency();
-        } catch ( Exception e ) {
+        } catch ( QueryException e ) {
             return new HttpResponseEntity<List<MonthAQIExcessDTO>>().serverError(null);
         }
     }
@@ -140,7 +146,7 @@ public class StatisticsController {
     public HttpResponseEntity<List<AQIDistributeDTO>> getAQIDistribute() {
         try {
             return statisticsService.selectAQIDistribution();
-        } catch ( Exception e ) {
+        } catch ( QueryException e ) {
             return new HttpResponseEntity<List<AQIDistributeDTO>>().serverError(null);
         }
     }
@@ -149,7 +155,7 @@ public class StatisticsController {
     public HttpResponseEntity<StatisticsTotalDTO> getStatisticsSummary() {
         try {
             return statisticsService.selectStatisticsSummary();
-        } catch ( Exception e ) {
+        } catch ( QueryException e ) {
             return new HttpResponseEntity<StatisticsTotalDTO>().serverError(null);
         }
     }

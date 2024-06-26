@@ -240,6 +240,19 @@ public class UserController {
     }
 
     /**
+     * 修改公众监督员工作状态
+     */
+    @PutMapping(value = "/update/gm/state")
+    public HttpResponseEntity<Boolean> updateGmState(@RequestParam("gmUserId") String gmUserId, @RequestParam("state") Integer state) {
+        try {
+            // 更新网格员工作状态
+            return userService.changeGmState(gmUserId, state);
+        } catch ( UpdateException e ) {
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
+    }
+
+    /**
      * <b>删除用户信息<b/>
      *
      * @param user 用户信息

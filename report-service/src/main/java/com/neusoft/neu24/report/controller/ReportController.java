@@ -6,8 +6,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.ReportDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
+import com.neusoft.neu24.exceptions.QueryException;
+import com.neusoft.neu24.exceptions.SaveException;
+import com.neusoft.neu24.exceptions.UpdateException;
 import com.neusoft.neu24.report.service.IReportService;
-import com.neusoft.neu24.utils.UserContext;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -43,10 +45,18 @@ public class ReportController {
      */
     @PostMapping(value = "/add", headers = "Accept=application/json")
     public HttpResponseEntity<Report> addReport(@RequestBody Map<String, Object> map) {
-        Report report = BeanUtil.fillBeanWithMap(map, new Report(), false);
-        report.setReportTime(LocalDateTime.now());
-        report.setState(0);
-        return reportService.addReport(report);
+        try {
+            // 封装待保存的反馈信息
+            Report report = BeanUtil.fillBeanWithMap(map, new Report(), false);
+
+            // 为反馈信息设置反馈时间与状态(0: 未指派)
+            report.setReportTime(LocalDateTime.now());
+            report.setState(0);
+            return reportService.addReport(report);
+        } catch ( SaveException e ) {
+            logger.error("新建反馈信息时发生异常", e);
+            return new HttpResponseEntity<Report>().serverError(null);
+        }
     }
 
     /**
@@ -58,12 +68,17 @@ public class ReportController {
     @PutMapping(value = "/assign", headers = "Accept=application/json")
     public HttpResponseEntity<Boolean> reportAssign(@RequestBody Map<String, Object> map) {
 
-        // 获取参数
+        // 获取用户传入的参数
         String reportId = (String) map.get("reportId");
         String gmUserId = (String) map.get("gmUserId");
 
-        // 指派网格员
-        return reportService.assignGridManager(reportId, gmUserId);
+        try {
+            // 指派网格员
+            return reportService.assignGridManager(reportId, gmUserId);
+        } catch ( UpdateException e ) {
+            logger.error("指派网格员时发生异常", e);
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
     }
 
     /**
@@ -74,42 +89,53 @@ public class ReportController {
      */
     @GetMapping(value = "/select/{reportId}")
     public HttpResponseEntity<ReportDTO> selectReportById(@PathVariable String reportId) {
-        return reportService.selectReportById(reportId);
+        try {
+            return reportService.selectReportById(reportId);
+        } catch ( QueryException e ) {
+            logger.info("根据反馈ID查询反馈信息时发生异常", e);
+            return new HttpResponseEntity<ReportDTO>().serverError(null);
+        }
     }
 
     /**
      * 根据条件分页查询反馈信息
      *
-     * @param map 查询条件(为null时查询全部)
+     * @param map     查询条件(为null时查询全部)
      * @param current 当前页
-     * @param size 每页数据条数
+     * @param size    每页数据条数
      * @return 分页查询结果
      */
     @PostMapping(value = "/select/page", headers = "Accept=application/json")
     public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
-
         try {
             if ( map == null || map.isEmpty() ) {
                 return reportService.selectReportByPage(null, current, size);
             } else {
                 logger.info("Report分页查询条件: {}", map);
-                Report report = BeanUtil.fillBeanWithMap(map,new Report(), false);
+                Report report = BeanUtil.fillBeanWithMap(map, new Report(), false);
                 return reportService.selectReportByPage(report, current, size);
             }
-        } catch ( Exception e ) {
+        } catch ( QueryException e ) {
+            logger.error("条件分页查询反馈信息", e);
             return new HttpResponseEntity<IPage<ReportDTO>>().serverError(null);
         }
     }
 
     /**
      * 更新反馈信息状态
+     *
      * @param reportId 反馈ID
-     * @param state 当前状态
+     * @param state    当前状态
      * @return 更新结果
      */
     @PostMapping("/state")
-    public HttpResponseEntity<Boolean> setReportState(@RequestParam("reportId") String reportId ,@RequestParam("state") Integer state) {
-        return reportService.setReportState(reportId,state);
+    public HttpResponseEntity<Boolean> setReportState(@RequestParam("reportId") String reportId, @RequestParam("state") Integer state) {
+        try {
+            return reportService.setReportState(reportId, state);
+        } catch ( UpdateException e ) {
+            logger.error("更新反馈信息: {} 状态时发生异常", reportId);
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
     }
 }
 

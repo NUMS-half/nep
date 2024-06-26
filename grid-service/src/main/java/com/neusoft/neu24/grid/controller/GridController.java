@@ -2,8 +2,12 @@ package com.neusoft.neu24.grid.controller;
 
 import com.neusoft.neu24.entity.Grid;
 import com.neusoft.neu24.entity.HttpResponseEntity;
+import com.neusoft.neu24.exceptions.QueryException;
+import com.neusoft.neu24.exceptions.UpdateException;
 import com.neusoft.neu24.grid.service.IGridService;
 import jakarta.annotation.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +24,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/grid")
 public class GridController {
+
+    private static final Logger logger = LoggerFactory.getLogger(GridController.class);
 
     @Resource
     private IGridService gridService;
@@ -38,29 +44,50 @@ public class GridController {
             grid.setTownCode((String) map.get("townCode"));
             grid.setCityCode((String) map.get("cityCode"));
             return gridService.updateGridTown(grid);
-        } catch ( Exception e ) {
+        } catch ( UpdateException e ) {
+            logger.error("更新网格区/县信息时发生异常", e);
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
     }
 
     @GetMapping(value = "/select/province/map")
     public HttpResponseEntity<Map<Object, Object>> selectProvinceMap() {
-        return gridService.selectProvinceMap();
+        try {
+            return gridService.selectProvinceMap();
+        } catch ( QueryException e ) {
+            logger.error("查询省份信息时发生异常", e);
+            return new HttpResponseEntity<Map<Object, Object>>().serverError(null);
+        }
     }
 
     @GetMapping(value = "/select/cities/{provinceCode}")
     public HttpResponseEntity<Map<Object,Object>> selectCitiesByProvinceCode(@PathVariable("provinceCode") String provinceCode) {
-        return gridService.selectCitiesMapByProvince(provinceCode);
+        try {
+            return gridService.selectCitiesMapByProvince(provinceCode);
+        } catch ( QueryException e ) {
+            logger.error("查询城市信息发生异常", e);
+            return new HttpResponseEntity<Map<Object, Object>>().serverError(null);
+        }
     }
 
     @GetMapping(value = "/select/{townCode}")
     public HttpResponseEntity<Grid> selectGridByTownCode(@PathVariable("townCode") String townCode) {
-        return gridService.selectGridByTownCode(townCode);
+        try {
+            return gridService.selectGridByTownCode(townCode);
+        } catch ( QueryException e ) {
+            logger.error("根据 townCode 查询网格信息时发生异常", e);
+            return new HttpResponseEntity<Grid>().serverError(null);
+        }
     }
 
     @GetMapping(value = "/select/sum")
     public HttpResponseEntity<Map<Object,Object>> selectGridTotal() {
-        return gridService.selectGridTotal();
+        try {
+            return gridService.selectGridTotal();
+        } catch ( QueryException e ) {
+            logger.error("查询网格总数时发生异常", e);
+            return new HttpResponseEntity<Map<Object, Object>>().serverError(null);
+        }
     }
 
 }

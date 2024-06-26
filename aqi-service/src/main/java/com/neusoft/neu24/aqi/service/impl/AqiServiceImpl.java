@@ -43,6 +43,7 @@ public class AqiServiceImpl extends ServiceImpl<AqiMapper, Aqi> implements IAqiS
             }
             return new HttpResponseEntity<List<Aqi>>().success(aqiList);
         } catch ( Exception e ) {
+            logger.error("获取所有AQI信息时发生异常", e);
             throw new QueryException("获取所有AQI信息时发生异常", e);
         }
     }
@@ -64,6 +65,7 @@ public class AqiServiceImpl extends ServiceImpl<AqiMapper, Aqi> implements IAqiS
                 return new HttpResponseEntity<Boolean>().fail(ResponseEnum.STATISTICS_VALUE_INVALID);
             }
         } catch ( Exception e ) {
+            logger.error("校验AQI各项数值合法性时发生异常", e);
             throw new QueryException("校验AQI各项数值合法性时发生异常", e);
         }
     }

@@ -39,6 +39,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message> impleme
      * @return 是否保存成功
      */
     @Override
+    @Transactional
     public HttpResponseEntity<Message> saveChatMessage(Message message) {
         try {
             message.setSendTime(LocalDateTimeUtil.now());

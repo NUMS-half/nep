@@ -1,5 +1,5 @@
 server:
-  port: 8090
+  port: 8089
 
 spring:
   ai:
@@ -20,10 +20,3 @@ logging:
   level:
     root: info
     com.neusoft.neu24.chat.mapper: debug
-
-nep:
-  jwt:
-    location: classpath:nep.jks
-    alias: nanhu
-    password: neu123456
-    tokenTTL: 30m

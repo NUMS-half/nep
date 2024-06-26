@@ -4,7 +4,6 @@ import cn.hutool.core.bean.BeanUtil;
 import com.neusoft.neu24.chat.service.IChatService;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Message;
-import com.neusoft.neu24.chat.utils.JwtUtil;
 import com.neusoft.neu24.entity.ResponseEnum;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +33,6 @@ public class ChatController {
 
     @Resource
     IChatService chatService;
-
-    @Resource
-    JwtUtil jwtUtil;
 
     /**
      * 直接生成对话

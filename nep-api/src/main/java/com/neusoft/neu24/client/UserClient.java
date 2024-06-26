@@ -5,7 +5,9 @@ import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Map;
@@ -30,4 +32,7 @@ public interface UserClient {
      */
     @PostMapping(value = "/user/select/gm", headers = "Accept=application/json")
     HttpResponseEntity<List<User>> selectGridManagers(@RequestBody Map<String, Object> gmInfo);
+
+    @PutMapping(value = "/user/update/gm/state")
+    HttpResponseEntity<Boolean> updateGmState(@RequestParam("gmUserId") String gmUserId, @RequestParam("state") Integer state);
 }

@@ -29,6 +29,18 @@ public class UserClientFallbackFactory implements FallbackFactory<UserClient> {
             }
 
             @Override
+            public HttpResponseEntity<List<User>> selectAllUser() {
+                log.error("[UserService]查询所有用户信息信息失败: {}", cause.getMessage());
+                return null;
+            }
+
+            @Override
+            public HttpResponseEntity<List<User>> selectBatchUser(List<String> userIds) {
+                log.error("[UserService]批量查询用户信息失败: {}", cause.getMessage());
+                return null;
+            }
+
+            @Override
             public HttpResponseEntity<List<User>> selectGridManagers(Map<String, Object> gmInfo) {
                 log.error("[UserService]查询网格管理员信息失败: {}", cause.getMessage());
                 return new HttpResponseEntity<List<User>>().success(new ArrayList<>());

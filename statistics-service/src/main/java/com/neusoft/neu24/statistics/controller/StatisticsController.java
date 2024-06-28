@@ -66,8 +66,8 @@ public class StatisticsController {
      * @param statisticsId 统计信息ID
      * @return 查询结果
      */
-    @GetMapping(value = "/select/{statisticsId}")
-    public HttpResponseEntity<StatisticsDTO> selectStatisticsById(@PathVariable("statisticsId") String statisticsId) {
+    @GetMapping(value = "/select")
+    public HttpResponseEntity<StatisticsDTO> selectStatisticsById(@RequestParam("statisticsId") String statisticsId) {
         try {
             return statisticsService.selectStatisticsById(statisticsId);
         } catch ( QueryException e ) {

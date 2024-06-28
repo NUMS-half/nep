@@ -35,9 +35,9 @@ public class JwtUtil {
     public String createToken(User user, Duration ttl) {
         // 1.生成jws
         return JWT.create()
-                .setPayload("userId", user.getUserId())
-                .setPayload("roleId", user.getRoleId())
-                .setExpiresAt(new Date(System.currentTimeMillis() + ttl.toMillis()))
+                .setPayload("userId", user.getUserId()) // 设置用户id
+                .setPayload("roleId", user.getRoleId()) // 设置角色
+                .setExpiresAt(new Date(System.currentTimeMillis() + ttl.toMillis())) // 设置过期时间
                 .setSigner(jwtSigner)
                 .sign();
     }

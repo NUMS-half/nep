@@ -75,6 +75,29 @@ public class GridServiceImpl implements IGridService {
     }
 
     /**
+     * 根据区县编码批量查询网格信息
+     * @param townCodes 区县编码列表
+     * @return 网格信息列表
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public HttpResponseEntity<List<Grid>> selectGridByMultipleTownCodes(List<String> townCodes) {
+        if ( townCodes == null || townCodes.isEmpty() ) {
+            return new HttpResponseEntity<List<Grid>>().fail(ResponseEnum.CONTENT_IS_NULL);
+        }
+        try {
+            List<Grid> grids = gridMapper.selectGridByMultipleTownCodes(townCodes);
+            if ( grids.isEmpty() ) {
+                return new HttpResponseEntity<List<Grid>>().resultIsNull(null);
+            }
+            return new HttpResponseEntity<List<Grid>>().success(grids);
+        } catch ( Exception e ) {
+            logger.error("根据区县编码批量查询网格信息发生异常: {}", e.getMessage(), e);
+            return new HttpResponseEntity<List<Grid>>().serverError(null);
+        }
+    }
+
+    /**
      * 获取省份编码和名称的Map映射
      *
      * @return 省份编码和名称的Map映射

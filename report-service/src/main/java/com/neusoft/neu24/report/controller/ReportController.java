@@ -87,8 +87,8 @@ public class ReportController {
      * @param reportId 反馈ID
      * @return 查询结果
      */
-    @GetMapping(value = "/select/{reportId}")
-    public HttpResponseEntity<ReportDTO> selectReportById(@PathVariable String reportId) {
+    @GetMapping(value = "/select")
+    public HttpResponseEntity<ReportDTO> selectReportById(@RequestParam("reportId") String reportId) {
         try {
             return reportService.selectReportById(reportId);
         } catch ( QueryException e ) {

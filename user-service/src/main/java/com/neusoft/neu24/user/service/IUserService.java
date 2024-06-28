@@ -93,6 +93,13 @@ public interface IUserService extends IService<User> {
     HttpResponseEntity<IPage<User>> selectUserByPage(User user, long current, long size);
 
     /**
+     * 根据用户ID批量查询用户信息
+     * @param userIds 用户ID列表
+     * @return 用户信息列表
+     */
+    HttpResponseEntity<List<User>> selectBatchByIds(List<String> userIds);
+
+    /**
      * 修改用户状态
      * @param user
      * @return

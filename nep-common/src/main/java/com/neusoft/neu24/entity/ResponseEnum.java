@@ -43,8 +43,9 @@ public enum ResponseEnum {
     LOGIN_FAIL(301, "【账号】或【密码】错误"),
     SMS_CODE_ERROR(301, "登录验证码【错误】或【过期】"),
 
-    // 3.注册
+    // 3.注册/修改
     REGISTER_FAIL(302, "注册失败：用户名/手机号【已被注册】或【输入不合法】"),
+    PASSWORD_SAME(302, "新密码不能与旧密码相同"),
 
     // 4.反馈上报
     REPORT_FAIL_ESTIMATE_INVALID(303, "预估AQI等级不合法"),

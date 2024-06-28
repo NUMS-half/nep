@@ -68,3 +68,10 @@ nep:
       - /user/register
       - /user/sendSMSCode
       - /sse/**
+  permission:
+    exclude-paths:
+        - /user/login
+        - /user/login/phone
+        - /user/register
+        - /user/sendSMSCode
+        - /sse/**

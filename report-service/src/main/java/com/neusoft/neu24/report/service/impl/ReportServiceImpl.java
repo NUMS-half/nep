@@ -19,6 +19,9 @@ import io.netty.util.internal.StringUtil;
 import io.seata.common.util.StringUtils;
 import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.annotation.Resource;
+
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -28,9 +31,10 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -230,14 +234,14 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             IPage<Report> pages;
             LambdaQueryWrapper<Report> queryWrapper = new LambdaQueryWrapper<>();
             if ( report != null ) {
-                queryWrapper.eq(report.getUserId() != null, Report::getUserId, report.getUserId())
-                        .eq(report.getProvinceCode() != null, Report::getProvinceCode, report.getProvinceCode())
-                        .eq(report.getCityCode() != null, Report::getCityCode, report.getCityCode())
-                        .eq(report.getTownCode() != null, Report::getTownCode, report.getTownCode())
-                        .eq(report.getAddress() != null, Report::getAddress, report.getAddress())
-                        .eq(report.getInformation() != null, Report::getInformation, report.getInformation())
+                queryWrapper.eq(StringUtils.isNotBlank(report.getUserId()), Report::getUserId, report.getUserId())
+                        .eq(StringUtils.isNotBlank(report.getProvinceCode()), Report::getProvinceCode, report.getProvinceCode())
+                        .eq(StringUtils.isNotBlank(report.getCityCode()), Report::getCityCode, report.getCityCode())
+                        .eq(StringUtils.isNotBlank(report.getTownCode()), Report::getTownCode, report.getTownCode())
+                        .eq(StringUtils.isNotBlank(report.getAddress()), Report::getAddress, report.getAddress())
+                        .eq(StringUtils.isNotBlank(report.getInformation()), Report::getInformation, report.getInformation())
                         .eq(report.getEstimatedLevel() != null, Report::getEstimatedLevel, report.getEstimatedLevel())
-                        .eq(report.getGmUserId() != null, Report::getGmUserId, report.getGmUserId())
+                        .eq(StringUtils.isNotBlank(report.getGmUserId()), Report::getGmUserId, report.getGmUserId())
                         .eq(report.getState() != null, Report::getState, report.getState());
                 pages = getBaseMapper().selectPage(page, queryWrapper);
             } else {
@@ -246,7 +250,8 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             if ( pages == null || pages.getTotal() == 0 ) {
                 return new HttpResponseEntity<IPage<ReportDTO>>().resultIsNull(null);
             }
-            IPage<ReportDTO> dtoPages = pages.convert(this::fillReportDTO);
+            IPage<ReportDTO> dtoPages = new Page<>();
+            dtoPages.setRecords(fillReportDTOList(pages.getRecords()));
             return new HttpResponseEntity<IPage<ReportDTO>>().success(dtoPages);
         } catch ( Exception e ) {
             logger.error("分页条件查询反馈信息时发生异常", e);
@@ -301,7 +306,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             HttpResponseEntity<User> userResponse = userFuture.get();
             HttpResponseEntity<Grid> gridResponse = gridFuture.get();
             // 两者有其一查询失败则返回空
-            if ( userResponse.getCode() != 100 || gridResponse.getCode() != 200 ) {
+            if ( userResponse.getCode() != 200 || gridResponse.getCode() != 200 ) {
                 return null;
             } else {
                 ReportDTO reportDTO = new ReportDTO(report);
@@ -313,6 +318,45 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
         } catch ( ExecutionException | InterruptedException e ) {
             logger.error("填充上报信息: {} DTO时，异步远程调用发生异常", report.getReportId(), e);
             throw new QueryException("填充上报信息DTO时，异步远程调用发生异常", e);
+        }
+    }
+
+    /**
+     * 填充反馈信息的用户信息和网格信息
+     *
+     * @param reports 反馈信息列表
+     * @return 填充后的反馈信息
+     */
+    private List<ReportDTO> fillReportDTOList(List<Report> reports) {
+        List<String> userIds = reports.stream().map(Report::getUserId).toList();
+        List<String> townCodes = reports.stream().map(Report::getTownCode).toList();
+        CompletableFuture<HttpResponseEntity<List<User>>> userFuture = CompletableFuture.supplyAsync(() -> userClient.selectBatchUser(userIds));
+        CompletableFuture<HttpResponseEntity<List<Grid>>> gridFuture = CompletableFuture.supplyAsync(() -> gridClient.selectGridByMultipleTownCodes(townCodes));
+
+        // 等待异步调用完成
+        CompletableFuture.allOf(userFuture, gridFuture).join();
+        try {
+            HttpResponseEntity<List<User>> userResponse = userFuture.get();
+            HttpResponseEntity<List<Grid>> gridResponse = gridFuture.get();
+            // 两者有其一查询失败则返回空
+            if ( userResponse.getCode() != 200 || gridResponse.getCode() != 200 ) {
+                return Collections.emptyList();
+            } else {
+                Map<String, User> usersById = userResponse.getData().stream().collect(Collectors.toMap(User::getUserId, Function.identity()));
+                Map<String, Grid> gridsByTownCode = gridResponse.getData().stream().collect(Collectors.toMap(Grid::getTownCode, Function.identity()));
+                List<ReportDTO> reportDTOs = new ArrayList<>();
+                for ( Report report : reports ) {
+                    ReportDTO reportDTO = new ReportDTO(report);
+                    reportDTO.fillUserInfo(usersById.get(report.getUserId()));
+                    reportDTO.fillGridInfo(gridsByTownCode.get(report.getTownCode()));
+                    reportDTOs.add(reportDTO);
+                }
+                logger.info("批量填充上报信息DTO成功");
+                return reportDTOs;
+            }
+        } catch ( ExecutionException | InterruptedException e ) {
+            logger.error("批量填充上报信息DTO时，异步远程调用发生异常", e);
+            throw new QueryException("批量填充上报信息DTO时，异步远程调用发生异常", e);
         }
     }
 }

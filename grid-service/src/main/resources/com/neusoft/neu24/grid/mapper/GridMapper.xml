@@ -39,6 +39,31 @@
         </if>
     </select>
 
+    <select id="selectGridByMultipleTownCodes" parameterType="java.util.List" resultMap="gridResultMap">
+        SELECT
+        p.province_id AS provinceId,
+        p.province_code AS provinceCode,
+        p.province_name AS provinceName,
+        c.city_id AS cityId,
+        c.city_code AS cityCode,
+        c.city_name AS cityName,
+        t.town_id AS townId,
+        t.town_code AS townCode,
+        t.town_name AS townName
+        FROM
+        grid_town t
+        JOIN
+        grid_city c ON t.city_code = c.city_code
+        JOIN
+        grid_province p ON c.province_code = p.province_code
+        WHERE
+        t.town_code IN
+        <foreach item="townCode" index="index" collection="townCodes" open="(" separator="," close=")">
+            #{townCode}
+        </foreach>
+    </select>
+
+
     <resultMap id="gridResultMap" type="com.neusoft.neu24.entity.Grid">
         <result property="provinceCode" column="provinceCode"/>
         <result property="provinceName" column="provinceName"/>

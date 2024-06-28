@@ -137,6 +137,22 @@ public class UserController {
     }
 
     /**
+     * <b>批量查询用户信息<b/>
+     *
+     * @param userIds 用户ID列表
+     * @return 查询结果
+     */
+    @PostMapping(value = "/select/batch", headers= "Accept=application/json")
+    public HttpResponseEntity<List<User>> selectBatchUser(@RequestBody List<String> userIds) {
+        try {
+            return userService.selectBatchByIds(userIds);
+        } catch ( QueryException e ) {
+            logger.error("批量查询指定用户信息发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<List<User>>().serverError(null);
+        }
+    }
+
+    /**
      * <b>分页查询用户信息<b/>
      *
      * @param map 查询条件

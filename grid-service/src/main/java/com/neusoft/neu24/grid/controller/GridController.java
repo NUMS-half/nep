@@ -80,6 +80,16 @@ public class GridController {
         }
     }
 
+    @PostMapping(value = "/select/batch")
+    public HttpResponseEntity<List<Grid>> selectGridByMultipleTownCodes(@RequestBody List<String> townCodes) {
+        try {
+            return gridService.selectGridByMultipleTownCodes(townCodes);
+        } catch ( QueryException e ) {
+            logger.error("根据 townCodes 批量查询网格信息时发生异常", e);
+            return new HttpResponseEntity<List<Grid>>().serverError(null);
+        }
+    }
+
     @GetMapping(value = "/select/sum")
     public HttpResponseEntity<Map<Object,Object>> selectGridTotal() {
         try {

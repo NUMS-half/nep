@@ -23,6 +23,11 @@ public interface UserClient {
     @PostMapping("/user/select")
     HttpResponseEntity<User> selectUser(@RequestBody Map<String, Object> userInfo);
 
+    @PostMapping("/user/select/all")
+    HttpResponseEntity<List<User>> selectAllUser();
+
+    @PostMapping(value = "/user/select/batch", headers= "Accept=application/json")
+    HttpResponseEntity<List<User>> selectBatchUser(@RequestBody List<String> userIds);
 
     /**
      * <b>条件查找网格员<b/>

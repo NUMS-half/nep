@@ -7,12 +7,12 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * 登录校验路径配置
+ * 权限校验路径配置
  */
 @Data
 @Component
-@ConfigurationProperties(prefix = "nep.auth")
-public class AuthProperties {
+@ConfigurationProperties(prefix = "nep.permission")
+public class PermissionProperties {
     private List<String> includePaths;
     private List<String> excludePaths;
 }

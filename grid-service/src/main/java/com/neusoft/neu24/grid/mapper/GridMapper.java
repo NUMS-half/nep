@@ -33,6 +33,8 @@ public interface GridMapper {
      */
     List<Grid> selectGridByTownCode(@Param("townCode") String townCode);
 
+    List<Grid> selectGridByMultipleTownCodes(@Param("townCodes") List<String> townCodes);
+
     List<Map<Object,Object>> selectCitiesMapByProvince(@Param("provinceCode") String provinceCode);
 
     List<Map<Object,Object>> selectProvinceMap();

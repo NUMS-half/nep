@@ -25,6 +25,8 @@ public interface IGridService {
      */
     HttpResponseEntity<Grid> selectGridByTownCode(String townCode);
 
+    HttpResponseEntity<List<Grid>> selectGridByMultipleTownCodes(List<String> townCodes);
+
     HttpResponseEntity<Map<Object,Object>> selectProvinceMap();
 
     HttpResponseEntity<Map<Object,Object>> selectCitiesMapByProvince(String provinceCode);

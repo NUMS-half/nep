@@ -235,6 +235,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     /**
+     * 根据用户ID批量查询用户信息
+     *
+     * @param userIds 用户ID列表
+     * @return 用户信息列表
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public HttpResponseEntity<List<User>> selectBatchByIds(List<String> userIds) {
+        if ( userIds == null || userIds.isEmpty() ) {
+            return new HttpResponseEntity<List<User>>().fail(ResponseEnum.CONTENT_IS_NULL);
+        }
+        try {
+            List<User> users = userMapper.selectBatchIds(userIds);
+            if ( users.isEmpty() ) {
+                return new HttpResponseEntity<List<User>>().resultIsNull(null);
+            }
+            return new HttpResponseEntity<List<User>>().success(users);
+        } catch ( Exception e ) {
+            throw new QueryException("根据用户ID批量查询用户信息时发生异常", e);
+        }
+    }
+
+    /**
      * 修改用户状态
      *
      * @param user   用户信息
@@ -364,10 +387,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if ( user == null || StringUtils.isEmpty(user.getUserId()) ) {
             return new HttpResponseEntity<Boolean>().fail(ResponseEnum.CONTENT_IS_NULL);
         }
+        // 获取原本的用户，校验用户是否存在
+        User oldUser;
+        Map<Object,Object> userMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + user.getUserId());
+        if ( userMap.isEmpty() ) {
+            oldUser = userMapper.selectById(user.getUserId());
+        } else {
+            oldUser = BeanUtil.fillBeanWithMap(userMap, new User(), false);
+        }
+        if ( oldUser == null ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.USER_NOT_EXIST);
+        }
         // 更新用户数据
         try {
-            if (StringUtils.isNotBlank(user.getPassword())) {
-                user.setPassword(SecureUtil.md5(user.getPassword()));
+            // 当用户修改密码时
+            if ( StringUtils.isNotBlank(user.getPassword()) ) {
+                // 先对新密码进行MD5加密
+                String newPassword = SecureUtil.md5(user.getPassword());
+                // 判断新密码是否与旧密码相同
+                    if ( newPassword.equals(oldUser.getPassword()) ) {
+                    return new HttpResponseEntity<Boolean>().fail(ResponseEnum.PASSWORD_SAME);
+                }
+                // 不相同时，更新密码
+                user.setPassword(newPassword);
             }
             if ( userMapper.updateById(user) != 0 ) {
                 refreshUserCache(user);

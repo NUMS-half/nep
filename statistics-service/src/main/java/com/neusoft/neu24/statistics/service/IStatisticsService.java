@@ -52,6 +52,8 @@ public interface IStatisticsService extends IService<Statistics> {
      */
     HttpResponseEntity<StatisticsDTO> selectStatisticsById(String statisticsId);
 
+    HttpResponseEntity<List<Statistics>> selectStatisticsByReportId(String reportId);
+
     /**
      * 查询省/市分项指标超标统计
      * @param provinceCode 省份编码(为空时按省分，不为空时按市分)
@@ -67,7 +69,6 @@ public interface IStatisticsService extends IService<Statistics> {
 
     /**
      * AQI指数等级分布统计
-     * @param provinceCode 省份编码(为空查全部)
      * @return AQI指数等级分布统计列表
      */
     HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution();

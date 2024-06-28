@@ -75,6 +75,15 @@ public class StatisticsController {
         }
     }
 
+    @GetMapping(value = "/select/report")
+    public HttpResponseEntity<List<Statistics>> selectStatisticsByReportId(@RequestParam("reportId") String reportId) {
+        try {
+            return statisticsService.selectStatisticsByReportId(reportId);
+        } catch ( QueryException e ) {
+            return new HttpResponseEntity<List<Statistics>>().serverError(null);
+        }
+    }
+
     /**
      * <b>条件分页查询统计信息<b/>
      *

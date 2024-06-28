@@ -253,6 +253,28 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         }
     }
 
+    @Override
+    public HttpResponseEntity<List<Statistics>> selectStatisticsByReportId(String reportId) {
+        if ( StringUtils.isEmpty(reportId) ) {
+            return new HttpResponseEntity<List<Statistics>>().fail(ResponseEnum.CONTENT_IS_NULL);
+        } else {
+            try {
+                LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(Statistics::getReportId, reportId).orderByAsc(Statistics::getConfirmTime);
+                List<Statistics> list = statisticsMapper.selectList(queryWrapper);
+                if ( list.isEmpty() ) {
+                    return new HttpResponseEntity<List<Statistics>>().resultIsNull(null);
+                } else {
+                    logger.info("根据反馈ID: {} 查询统计信息成功", reportId);
+                    return new HttpResponseEntity<List<Statistics>>().success(list);
+                }
+            } catch ( QueryException e ) {
+                logger.error("根据反馈ID查询统计信息失败:{}", e.getMessage(), e);
+                throw new QueryException("根据反馈ID查询统计信息时发生异常", e);
+            }
+        }
+    }
+
     /**
      * 查询省/市分项指标超标统计
      *

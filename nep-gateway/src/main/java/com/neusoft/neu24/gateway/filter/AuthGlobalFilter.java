@@ -83,6 +83,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             return serverHttpResponse.setComplete();
         }
         String userId = response.getData();
+//        String roleId = jwtUtil.getRoleIdByToken(token);
 
 
 //        // TODO 5. 刷新token与redis中的token过期时间
@@ -100,6 +101,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         // 6. 传递用户信息到后端服务
         ServerWebExchange newExchange = exchange.mutate()
                 .request(builder -> builder.header("userId", userId)) // 传递用户信息
+//                .request(builder -> builder.header("roleId", roleId)) // 传递token
 //                .request(builder -> builder.header("Authorization", newToken)) // 传递新token
                 .build();
 

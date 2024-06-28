@@ -20,6 +20,6 @@ public interface ReportClient {
     @PostMapping("/report/state")
     HttpResponseEntity<Boolean> setReportState(@RequestParam("reportId") String reportId , @RequestParam("state") Integer state);
 
-    @GetMapping(value = "/report/select/{reportId}")
-    HttpResponseEntity<ReportDTO> selectReportById(@PathVariable String reportId);
+    @GetMapping(value = "/report/select")
+    HttpResponseEntity<ReportDTO> selectReportById(@RequestParam("reportId") String reportId);
 }

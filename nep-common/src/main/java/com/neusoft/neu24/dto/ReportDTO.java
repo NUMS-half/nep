@@ -62,6 +62,10 @@ public class ReportDTO {
     // 网格员ID
     private String gmUserId;
 
+    // 指派时间
+    @JsonFormat( pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime assignTime;
+
     // 反馈状态
     private Integer state;
 
@@ -76,6 +80,7 @@ public class ReportDTO {
         this.information = report.getInformation();
         this.reportTime = report.getReportTime();
         this.gmUserId = report.getGmUserId();
+        this.assignTime = report.getAssignTime();
         this.state = report.getState();
     }
 

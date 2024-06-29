@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.neusoft.neu24.role.mapper.RoleMapper">
 
-    <select id="selectSystemNodeById" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+    <select id="selectNodeIdsByRoleId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
         SELECT rnr.node_id
         FROM role_node_r rnr
         WHERE rnr.role_id = #{ roleId }
@@ -13,6 +13,23 @@
                                    FROM system_node
                                    WHERE pid IS NOT NULL))
     </select>
+
+    <select id="selectNodesByRoleId" resultType="com.neusoft.neu24.entity.SystemNode" parameterType="java.lang.Integer">
+        SELECT sn.node_id,
+               sn.method,
+               sn.path
+        FROM role_node_r rnr
+                 JOIN
+             system_node sn ON rnr.node_id = sn.node_id
+        WHERE rnr.role_id = #{roleId}
+          AND NOT (rnr.node_id IN (SELECT DISTINCT pid
+                                   FROM system_node
+                                   WHERE pid IS NOT NULL))
+          AND NOT (rnr.role_id IN (SELECT role_id
+                                   FROM role
+                                   WHERE state != 1))
+    </select>
+
 
     <!-- 删除角色的所有节点关联 -->
     <delete id="deleteRoleNodes">

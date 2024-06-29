@@ -31,6 +31,11 @@ public class SystemNode implements Serializable {
     private Integer pid;
 
     /**
+     * 请求类型
+     */
+    private String method;
+
+    /**
      * 节点路径
      */
     private String path;

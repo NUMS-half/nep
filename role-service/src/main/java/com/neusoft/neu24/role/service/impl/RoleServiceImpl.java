@@ -8,12 +8,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.ResponseEnum;
 import com.neusoft.neu24.entity.Role;
+import com.neusoft.neu24.entity.SystemNode;
 import com.neusoft.neu24.role.mapper.RoleMapper;
 import com.neusoft.neu24.role.service.IRoleService;
 import jakarta.annotation.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -160,12 +160,21 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
      * @return 角色权限列表(子节点)
      */
     @Override
-    public HttpResponseEntity<List<Integer>> selectSystemNodeById(Integer roleId) {
-        List<Integer> list = roleMapper.selectSystemNodeById(roleId);
+    public HttpResponseEntity<List<Integer>> selectNodeIdsByRoleId(Integer roleId) {
+        List<Integer> list = roleMapper.selectNodeIdsByRoleId(roleId);
         if ( list == null || list.isEmpty() ) {
             return new HttpResponseEntity<List<Integer>>().resultIsNull(null);
         }
         return new HttpResponseEntity<List<Integer>>().success(list);
+    }
+
+    @Override
+    public HttpResponseEntity<List<SystemNode>> selectNodesByRoleId(Integer roleId) {
+        List<SystemNode> list = roleMapper.selectNodesByRoleId(roleId);
+        if ( list == null || list.isEmpty() ) {
+            return new HttpResponseEntity<List<SystemNode>>().resultIsNull(null);
+        }
+        return new HttpResponseEntity<List<SystemNode>>().success(list);
     }
 
     /**

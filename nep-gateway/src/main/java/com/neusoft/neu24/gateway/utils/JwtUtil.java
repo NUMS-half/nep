@@ -1,5 +1,6 @@
 package com.neusoft.neu24.gateway.utils;
 
+import cn.hutool.core.convert.NumberWithFormat;
 import cn.hutool.core.exceptions.ValidateException;
 import cn.hutool.jwt.JWT;
 import cn.hutool.jwt.JWTValidator;
@@ -104,8 +105,8 @@ public class JwtUtil {
      * @param token token
      * @return roleId
      */
-    public String getRoleIdByToken(String token) {
+    public NumberWithFormat getRoleIdByToken(String token) {
         JWT jwt = JWT.of(token).setSigner(jwtSigner);
-        return (String) jwt.getPayload("roleId");
+        return (NumberWithFormat) jwt.getPayload("roleId");
     }
 }

@@ -6,6 +6,8 @@ import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import static com.neusoft.neu24.config.FeignConstants.FEIGN_SECRET_KEY;
+
 @Configuration
 public class DefaultFeignConfig {
 
@@ -14,11 +16,14 @@ public class DefaultFeignConfig {
      */
     @Bean
     public RequestInterceptor userInfoRequestInterceptor() {
-        return requestTemplate -> requestTemplate.header("userId", UserContext.getUser());
+        return requestTemplate -> {
+            requestTemplate.header("userId", UserContext.getUser());
+//            requestTemplate.header("Api-Key", FEIGN_SECRET_KEY);
+        };
     }
 
     /**
-     * <b>Feign请求失败回调工厂<b/>
+     * <b>User Service Feign请求失败回调工厂<b/>
      */
     @Bean
     public UserClientFallbackFactory userClientFallbackFactory() {

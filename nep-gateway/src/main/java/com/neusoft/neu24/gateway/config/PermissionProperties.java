@@ -15,4 +15,5 @@ import java.util.List;
 public class PermissionProperties {
     private List<String> includePaths;
     private List<String> excludePaths;
+    private String roleServiceBaseUrl;
 }

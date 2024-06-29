@@ -60,8 +60,8 @@ public class GridController {
         }
     }
 
-    @GetMapping(value = "/select/cities/{provinceCode}")
-    public HttpResponseEntity<Map<Object,Object>> selectCitiesByProvinceCode(@PathVariable("provinceCode") String provinceCode) {
+    @GetMapping(value = "/select/cities")
+    public HttpResponseEntity<Map<Object,Object>> selectCitiesByProvinceCode(@RequestParam("provinceCode") String provinceCode) {
         try {
             return gridService.selectCitiesMapByProvince(provinceCode);
         } catch ( QueryException e ) {
@@ -70,8 +70,8 @@ public class GridController {
         }
     }
 
-    @GetMapping(value = "/select/{townCode}")
-    public HttpResponseEntity<Grid> selectGridByTownCode(@PathVariable("townCode") String townCode) {
+    @GetMapping(value = "/select")
+    public HttpResponseEntity<Grid> selectGridByTownCode(@RequestParam("townCode") String townCode) {
         try {
             return gridService.selectGridByTownCode(townCode);
         } catch ( QueryException e ) {

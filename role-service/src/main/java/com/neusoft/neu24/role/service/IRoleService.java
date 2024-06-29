@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Role;
+import com.neusoft.neu24.entity.SystemNode;
 
 import java.util.List;
 
@@ -55,7 +56,9 @@ public interface IRoleService extends IService<Role> {
      * @param roleId 角色ID
      * @return 角色权限列表
      */
-    HttpResponseEntity<List<Integer>> selectSystemNodeById(Integer roleId);
+    HttpResponseEntity<List<Integer>> selectNodeIdsByRoleId(Integer roleId);
+
+    HttpResponseEntity<List<SystemNode>> selectNodesByRoleId(Integer roleId);
 
     /**
      * 修改角色权限列表

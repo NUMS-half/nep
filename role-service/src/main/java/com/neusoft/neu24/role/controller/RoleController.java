@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Role;
+import com.neusoft.neu24.entity.SystemNode;
 import com.neusoft.neu24.role.service.IRoleService;
 import jakarta.annotation.Resource;
 import org.apache.ibatis.annotations.Param;
@@ -59,9 +60,14 @@ public class RoleController {
     /**
      * 查询角色权限列表
      */
-    @GetMapping(value = "/select/node/{roleId}")
-    public HttpResponseEntity<List<Integer>> selectSystemNodeById(@PathVariable("roleId") Integer roleId) {
-        return roleService.selectSystemNodeById(roleId);
+    @GetMapping(value = "/select/node")
+    public HttpResponseEntity<List<Integer>> selectSystemNodeById(@RequestParam("roleId") Integer roleId) {
+        return roleService.selectNodeIdsByRoleId(roleId);
+    }
+
+    @GetMapping(value = "/select")
+    public HttpResponseEntity<List<SystemNode>> selectNodesByRoleId(@RequestParam("roleId") Integer roleId) {
+        return roleService.selectNodesByRoleId(roleId);
     }
 
     /**

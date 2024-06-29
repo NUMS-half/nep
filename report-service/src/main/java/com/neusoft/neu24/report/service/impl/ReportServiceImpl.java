@@ -228,7 +228,7 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
      */
     @Override
     @Transactional(readOnly = true)
-    public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(Report report, long current, long size) throws QueryException {
+    public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(Report report, long current, long size, List<Integer> aqiList) throws QueryException {
         try {
             IPage<Report> page = new Page<>(current, size);
             IPage<Report> pages;
@@ -240,13 +240,16 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
                         .eq(StringUtils.isNotBlank(report.getTownCode()), Report::getTownCode, report.getTownCode())
                         .eq(StringUtils.isNotBlank(report.getAddress()), Report::getAddress, report.getAddress())
                         .eq(StringUtils.isNotBlank(report.getInformation()), Report::getInformation, report.getInformation())
-                        .eq(report.getEstimatedLevel() != null, Report::getEstimatedLevel, report.getEstimatedLevel())
+//                        .eq(report.getEstimatedLevel() != null, Report::getEstimatedLevel, report.getEstimatedLevel())
                         .eq(StringUtils.isNotBlank(report.getGmUserId()), Report::getGmUserId, report.getGmUserId())
                         .eq(report.getState() != null, Report::getState, report.getState());
-                pages = getBaseMapper().selectPage(page, queryWrapper);
-            } else {
-                pages = getBaseMapper().selectPage(page, null);
+
             }
+            if ( aqiList != null && !aqiList.isEmpty() ) {
+                queryWrapper.in(Report::getEstimatedLevel, aqiList);
+            }
+            queryWrapper.orderByDesc(Report::getReportTime);
+            pages = getBaseMapper().selectPage(page, queryWrapper);
             if ( pages == null || pages.getTotal() == 0 ) {
                 return new HttpResponseEntity<IPage<ReportDTO>>().resultIsNull(null);
             }

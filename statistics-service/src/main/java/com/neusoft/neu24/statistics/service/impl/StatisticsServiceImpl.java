@@ -260,7 +260,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         } else {
             try {
                 LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
-                queryWrapper.eq(Statistics::getReportId, reportId).orderByAsc(Statistics::getConfirmTime);
+                queryWrapper.eq(Statistics::getReportId, reportId).orderByDesc(Statistics::getConfirmTime);
                 List<Statistics> list = statisticsMapper.selectList(queryWrapper);
                 if ( list.isEmpty() ) {
                     return new HttpResponseEntity<List<Statistics>>().resultIsNull(null);

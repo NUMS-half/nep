@@ -6,6 +6,8 @@ import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.Report;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * <p>
  *  服务类
@@ -54,7 +56,7 @@ public interface IReportService extends IService<Report> {
      * @param size 每页数据条数
      * @return 分页查询结果
      */
-    HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(Report report, long current, long size);
+    HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(Report report, long current, long size, List<Integer> states);
 
     /**
      * 设置反馈信息状态

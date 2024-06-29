@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -106,15 +107,20 @@ public class ReportController {
      * @return 分页查询结果
      */
     @PostMapping(value = "/select/page", headers = "Accept=application/json")
-    public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(@RequestBody(required = false) Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
+    public HttpResponseEntity<IPage<ReportDTO>> selectReportByPage(@RequestBody(required = false) Map<String, Object> map,
+                                                                   @RequestParam("current") long current,
+                                                                   @RequestParam("size") long size,
+                                                                   @RequestParam(value = "aqiList", required = false) List<Integer> aqiList) {
         try {
-            if ( map == null || map.isEmpty() ) {
-                return reportService.selectReportByPage(null, current, size);
-            } else {
+            Report report = null;
+            if ( map != null && !map.isEmpty() ) {
                 logger.info("Report分页查询条件: {}", map);
-                Report report = BeanUtil.fillBeanWithMap(map, new Report(), false);
-                return reportService.selectReportByPage(report, current, size);
+                report = BeanUtil.fillBeanWithMap(map, new Report(), false);
             }
+            if ( aqiList != null && !aqiList.isEmpty() ) {
+                logger.info("Report预估AQI等级多选条件: {}", aqiList);
+            }
+            return reportService.selectReportByPage(report, current, size, aqiList);
         } catch ( QueryException e ) {
             logger.error("条件分页查询反馈信息", e);
             return new HttpResponseEntity<IPage<ReportDTO>>().serverError(null);

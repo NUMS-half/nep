@@ -2,6 +2,7 @@ package com.neusoft.neu24.role.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.neusoft.neu24.entity.Role;
+import com.neusoft.neu24.entity.SystemNode;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
@@ -26,7 +27,9 @@ public interface RoleMapper extends BaseMapper<Role> {
      * @param roleId 角色ID
      * @return 角色权限列表
      */
-    List<Integer> selectSystemNodeById(@Param("roleId") Integer roleId);
+    List<Integer> selectNodeIdsByRoleId(@Param("roleId") Integer roleId);
+
+    List<SystemNode> selectNodesByRoleId(@Param("roleId") Integer roleId);
 
     int deleteRoleNodes(@Param("roleId") Integer roleId);
 

@@ -253,7 +253,14 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         }
     }
 
+    /**
+     * <b>根据反馈ID查询统计信息<b/>
+     *
+     * @param reportId 反馈ID
+     * @return 查询结果
+     */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<Statistics>> selectStatisticsByReportId(String reportId) {
         if ( StringUtils.isEmpty(reportId) ) {
             return new HttpResponseEntity<List<Statistics>>().fail(ResponseEnum.CONTENT_IS_NULL);

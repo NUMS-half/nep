@@ -1,5 +1,6 @@
 package com.neusoft.neu24.report.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -255,6 +256,9 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             }
             IPage<ReportDTO> dtoPages = new Page<>();
             dtoPages.setRecords(fillReportDTOList(pages.getRecords()));
+            dtoPages.setTotal(pages.getTotal());
+            dtoPages.setCurrent(pages.getCurrent());
+            dtoPages.setSize(pages.getSize());
             return new HttpResponseEntity<IPage<ReportDTO>>().success(dtoPages);
         } catch ( Exception e ) {
             logger.error("分页条件查询反馈信息时发生异常", e);

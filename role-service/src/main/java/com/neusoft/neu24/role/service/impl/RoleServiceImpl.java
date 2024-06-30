@@ -1,5 +1,8 @@
 package com.neusoft.neu24.role.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.ListUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -11,17 +14,32 @@ import com.neusoft.neu24.entity.Role;
 import com.neusoft.neu24.entity.SystemNode;
 import com.neusoft.neu24.role.mapper.RoleMapper;
 import com.neusoft.neu24.role.service.IRoleService;
+import io.lettuce.core.RedisCommandTimeoutException;
 import jakarta.annotation.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static com.neusoft.neu24.config.RedisConstants.ROLE_PERMISSION_KEY;
 
 @Service
+@Transactional
 public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IRoleService {
+
+    private static final Logger logger = LoggerFactory.getLogger(RoleServiceImpl.class);
 
     @Resource
     private RoleMapper roleMapper;
+
+    @Resource
+    private RedisTemplate<String, SystemNode> redisTemplate;
 
     /**
      * 查询所有角色信息
@@ -29,6 +47,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
      * @return 所有角色信息
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<Role>> selectAll() {
         QueryWrapper<Role> queryWrapper = new QueryWrapper<>();
         queryWrapper.ne("state", -1);
@@ -46,6 +65,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
      * @return 分页的角色信息
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<IPage<Role>> selectRoleByPage(Role role, long current, long size) {
         IPage<Role> page = new Page<>(current, size);
         IPage<Role> pages;
@@ -160,6 +180,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
      * @return 角色权限列表(子节点)
      */
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<Integer>> selectNodeIdsByRoleId(Integer roleId) {
         List<Integer> list = roleMapper.selectNodeIdsByRoleId(roleId);
         if ( list == null || list.isEmpty() ) {
@@ -169,12 +190,17 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
     }
 
     @Override
+    @Transactional(readOnly = true)
     public HttpResponseEntity<List<SystemNode>> selectNodesByRoleId(Integer roleId) {
-        List<SystemNode> list = roleMapper.selectNodesByRoleId(roleId);
-        if ( list == null || list.isEmpty() ) {
-            return new HttpResponseEntity<List<SystemNode>>().resultIsNull(null);
+        try {
+            List<SystemNode> nodeList = getNodesByRoleId(roleId);
+            return CollUtil.isEmpty(nodeList) ?
+                    new HttpResponseEntity<List<SystemNode>>().resultIsNull(null) :
+                    new HttpResponseEntity<List<SystemNode>>().success(nodeList);
+        } catch ( Exception e ) {
+            logger.error("查询角色权限列表时发生异常", e);
+            return new HttpResponseEntity<List<SystemNode>>().serverError(null);
         }
-        return new HttpResponseEntity<List<SystemNode>>().success(list);
     }
 
     /**
@@ -191,6 +217,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
         }
         try {
             roleMapper.deleteRoleNodes(roleId);
+            redisTemplate.delete(ROLE_PERMISSION_KEY + roleId.toString());
             return roleMapper.insertRoleAuth(roleId, nodeIds) > 0 ?
                     new HttpResponseEntity<Boolean>().success(true) :
                     new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
@@ -199,5 +226,21 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
         } catch ( Exception e ) {
             return new HttpResponseEntity<Boolean>().serverError(null);
         }
+    }
+
+    private List<SystemNode> getNodesByRoleId(Integer roleId) {
+        List<SystemNode> nodeList;
+        String redisKey = ROLE_PERMISSION_KEY + roleId.toString();
+        try {
+            nodeList = redisTemplate.opsForList().range(redisKey, 0, -1);
+            if ( nodeList == null || nodeList.isEmpty() ) {
+                nodeList = roleMapper.selectNodesByRoleId(roleId);
+                redisTemplate.opsForList().rightPushAll(redisKey, nodeList);
+                redisTemplate.expire(redisKey, 30, TimeUnit.MINUTES);
+            }
+        } catch ( RedisCommandTimeoutException e ) {
+            nodeList = roleMapper.selectNodesByRoleId(roleId);
+        }
+        return nodeList;
     }
 }

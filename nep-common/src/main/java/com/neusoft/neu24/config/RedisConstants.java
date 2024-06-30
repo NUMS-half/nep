@@ -27,4 +27,6 @@ public class RedisConstants {
     public static final String GRID_TOTAL_KEY = "nep:grid:total";
 
     public static final String CITY_MAP_KEY = "nep:grid:city:";
+
+    public static final String ROLE_PERMISSION_KEY = "nep:role:permissions:";
 }

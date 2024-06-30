@@ -1,17 +1,13 @@
 package com.neusoft.neu24.gateway.filter;
 
-import com.neusoft.neu24.client.RoleClient;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.SystemNode;
 import com.neusoft.neu24.gateway.config.PermissionProperties;
-import jakarta.annotation.Resource;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -28,7 +24,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static com.neusoft.neu24.config.FeignConstants.FEIGN_SECRET_KEY;
 
 @Slf4j
 @Component

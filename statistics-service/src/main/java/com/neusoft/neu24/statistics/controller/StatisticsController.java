@@ -140,11 +140,11 @@ public class StatisticsController {
      * 按月查询AQI指数超标统计
      */
     @GetMapping(value = "/excess/tendency")
-    public HttpResponseEntity<List<MonthAQIExcessDTO>> getMonthAQIExcess(@RequestParam(value = "provinceCode",required = false) String provinceCode) {
+    public HttpResponseEntity<IPage<MonthAQIExcessDTO>> getMonthAQIExcess(@RequestParam("current") int current, @RequestParam("size") int size) {
         try {
-            return statisticsService.selectAQIExcessTendency();
+            return statisticsService.selectAQIExcessTendency(current, size);
         } catch ( QueryException e ) {
-            return new HttpResponseEntity<List<MonthAQIExcessDTO>>().serverError(null);
+            return new HttpResponseEntity<IPage<MonthAQIExcessDTO>>().serverError(null);
         }
     }
 

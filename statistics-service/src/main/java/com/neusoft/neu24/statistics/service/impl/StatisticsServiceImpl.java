@@ -2,6 +2,7 @@ package com.neusoft.neu24.statistics.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.util.NumberUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -31,10 +32,12 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * <b>统计信息服务实现类</b>
@@ -205,10 +208,12 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
             LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
             // 可通过省市区和确认时间四种条件查询
             if ( statistics != null ) {
-                queryWrapper.eq(statistics.getProvinceCode() != null, Statistics::getProvinceCode, statistics.getProvinceCode())
-                        .eq(statistics.getCityCode() != null, Statistics::getCityCode, statistics.getCityCode())
-                        .eq(statistics.getTownCode() != null, Statistics::getTownCode, statistics.getTownCode())
-                        .eq(statistics.getConfirmTime() != null, Statistics::getConfirmTime, statistics.getConfirmTime());
+                queryWrapper.eq(StringUtils.isNotBlank(statistics.getGmUserId()), Statistics::getGmUserId, statistics.getGmUserId())
+                        .eq(StringUtils.isNotBlank(statistics.getProvinceCode()), Statistics::getProvinceCode, statistics.getProvinceCode())
+                        .eq(StringUtils.isNotBlank(statistics.getCityCode()), Statistics::getCityCode, statistics.getCityCode())
+                        .eq(StringUtils.isNotBlank(statistics.getTownCode()), Statistics::getTownCode, statistics.getTownCode())
+                        .eq(statistics.getConfirmTime() != null, Statistics::getConfirmTime, statistics.getConfirmTime())
+                        .eq(statistics.getAqiId() != null, Statistics::getAqiId, statistics.getAqiId());
                 pages = getBaseMapper().selectPage(page, queryWrapper);
             } else {
                 pages = getBaseMapper().selectPage(page, null);
@@ -292,7 +297,8 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Transactional(readOnly = true)
     public HttpResponseEntity<List<ItemizedStatisticsDTO>> selectItemizedStatistics(String provinceCode) {
         List<ItemizedStatisticsDTO> list;
-        try {// 1. 省份编码为空，进行省分组分项查询
+        try {
+            // 1. 省份编码为空，进行省分组分项查询
             if ( StringUtils.isEmpty(provinceCode) ) {
                 list = statisticsMapper.selectItemizedStatistics(null);
                 Map<Object, Object> provinceMap = gridClient.selectProvinceMap().getData();
@@ -322,14 +328,35 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
      */
     @Override
     @Transactional(readOnly = true)
-    public HttpResponseEntity<List<MonthAQIExcessDTO>> selectAQIExcessTendency() {
+    public HttpResponseEntity<IPage<MonthAQIExcessDTO>> selectAQIExcessTendency(int current, int size) {
         try {
+//            int offset = (current - 1) * size;
+//            List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess();
+//            if ( CollUtil.isEmpty(list) ) {
+//                return new HttpResponseEntity<List<MonthAQIExcessDTO>>().resultIsNull(null);
+//            }
+//            logger.info("查询按月AQI指数超标统计成功");
+//            return new HttpResponseEntity<List<MonthAQIExcessDTO>>().success(list);
+            int offset = (current - 1) * size;
             List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess();
             if ( CollUtil.isEmpty(list) ) {
-                return new HttpResponseEntity<List<MonthAQIExcessDTO>>().resultIsNull(null);
+                return new HttpResponseEntity<IPage<MonthAQIExcessDTO>>().resultIsNull(null);
+            }
+
+            // 实现分页
+            List<MonthAQIExcessDTO> paginatedList = list.stream()
+                    .skip(offset)
+                    .limit(size)
+                    .collect(Collectors.toList());
+
+            IPage<MonthAQIExcessDTO> page = new Page<>(current, size, list.size());
+            page.setRecords(paginatedList);
+
+            if ( CollUtil.isEmpty(paginatedList) ) {
+                return new HttpResponseEntity<IPage<MonthAQIExcessDTO>>().resultIsNull(null);
             }
             logger.info("查询按月AQI指数超标统计成功");
-            return new HttpResponseEntity<List<MonthAQIExcessDTO>>().success(list);
+            return new HttpResponseEntity<IPage<MonthAQIExcessDTO>>().success(page);
         } catch ( Exception e ) {
             logger.error("查询按月AQI指数超标统计失败:{}", e.getMessage(), e);
             throw new QueryException("查询按月AQI指数超标统计时发生异常", e);
@@ -347,6 +374,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         try {
             // 1. 查询AQI分布情况
             List<AQIDistributeDTO> list = statisticsMapper.selectAQIDistribution();
+            int total = list.stream().mapToInt(AQIDistributeDTO::getCount).sum();
             if ( CollUtil.isEmpty(list) ) {
                 return new HttpResponseEntity<List<AQIDistributeDTO>>().resultIsNull(null);
             }
@@ -357,8 +385,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                 list.forEach(item -> {
                     Aqi aqi = aqiList.stream().filter(a -> a.getAqiId().equals(item.getAqiId())).findFirst().orElse(null);
                     if ( aqi != null ) {
+                        item.setColor(aqi.getColor());
                         item.setAqiLevel(aqi.getAqiLevel());
                         item.setAqiExplain(aqi.getAqiExplain());
+                        double percent = ((double) item.getCount() / total) * 100;
+                        item.setPercent(NumberUtil.roundStr(percent, 2));
                     }
                 });
                 return new HttpResponseEntity<List<AQIDistributeDTO>>().success(list);

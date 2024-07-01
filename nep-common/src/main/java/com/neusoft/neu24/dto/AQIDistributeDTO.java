@@ -14,6 +14,10 @@ public class AQIDistributeDTO {
 
     private String aqiExplain;
 
+    private String color;
+
+    private String percent;
+
     private Integer count;
 
     private String provinceCode;

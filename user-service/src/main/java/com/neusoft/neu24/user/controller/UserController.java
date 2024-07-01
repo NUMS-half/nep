@@ -55,13 +55,13 @@ public class UserController {
         // 解析前端请求的用户数据
         String username = (String) loginInfo.get("username");
         String password = (String) loginInfo.get("password");
-        try {
+//        try {
             // 登录校验
             return userService.login(username, password);
-        } catch ( LoginException e ) {
-            logger.error("用户登录校验发生异常: {}", e.getMessage());
-            return new HttpResponseEntity<UserDTO>().serverError(null);
-        }
+//        } catch ( LoginException e ) {
+//            logger.error("用户登录校验发生异常: {}", e.getMessage());
+//            return new HttpResponseEntity<UserDTO>().serverError(null);
+//        }
     }
 
     /**

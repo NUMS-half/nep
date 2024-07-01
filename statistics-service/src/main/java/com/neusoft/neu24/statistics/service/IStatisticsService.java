@@ -65,7 +65,7 @@ public interface IStatisticsService extends IService<Statistics> {
      * 按月查询AQI指数超标统计
      * @return AQI超标趋势统计
      */
-    HttpResponseEntity<List<MonthAQIExcessDTO>> selectAQIExcessTendency();
+    HttpResponseEntity<IPage<MonthAQIExcessDTO>> selectAQIExcessTendency(int current, int size);
 
     /**
      * AQI指数等级分布统计

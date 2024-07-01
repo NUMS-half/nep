@@ -33,6 +33,9 @@ public class AqiServiceImpl extends ServiceImpl<AqiMapper, Aqi> implements IAqiS
     @Resource
     private RedisTemplate<String, Aqi> redisTemplate;
 
+    @Resource
+    private AqiMapper aqiMapper;
+
     @Override
     @Transactional(readOnly = true)
     public HttpResponseEntity<List<Aqi>> getAllApiInfo() throws QueryException {
@@ -97,11 +100,11 @@ public class AqiServiceImpl extends ServiceImpl<AqiMapper, Aqi> implements IAqiS
         try {
             aqiList = redisTemplate.opsForList().range(AQI_KEY, 0, -1);
             if ( aqiList == null || aqiList.isEmpty() ) {
-                aqiList = baseMapper.selectList(null);
+                aqiList = aqiMapper.selectList(null);
                 redisTemplate.opsForList().rightPushAll(AQI_KEY, aqiList);
             }
         } catch ( RedisCommandTimeoutException e ) {
-            aqiList = baseMapper.selectList(null);
+            aqiList = aqiMapper.selectList(null);
         }
         return aqiList;
     }

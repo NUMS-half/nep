@@ -97,7 +97,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             logger.info("用户 {} 登录成功", username);
             return handleLogin(user);
         } catch ( Exception e ) {
-            throw new LoginException("登录失败", e);
+            throw new LoginException(e.getMessage(),e);
         }
     }
 
@@ -582,6 +582,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
             // 2. 保存用户信息到Redis缓存中
             Map<String, Object> userMap = convertUserToMap(user);
+            logger.info("用户 {} 登录成功，缓存用户数据", userMap);
             stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
             // 3. 为Redis的数据设置与token一样的有效期
             stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
@@ -597,14 +598,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * 更新用户信息后，刷新缓存数据
      */
     private void refreshUserCache(@NotNull User user) throws RedisException {
-        try {
+//        try {
             user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
             Map<String, Object> userMap = convertUserToMap(user);
             stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
             stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
-        } catch ( Exception e ) {
-            throw new RedisException("更新用户信息后，刷新缓存数据发生异常", e);
-        }
+//        } catch ( Exception e ) {
+//            throw new RedisException("更新用户信息后，刷新缓存数据发生异常", e);
+//        }
     }
 
     /**

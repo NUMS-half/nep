@@ -45,16 +45,16 @@ public class RoleController {
      */
     @PostMapping(value = "/select/page", headers = "Accept=application/json")
     public HttpResponseEntity<IPage<Role>> selectRoleByPage(@RequestBody Map<String, Object> map, @RequestParam("current") long current, @RequestParam("size") long size) {
-//        try {
+        try {
             if ( map == null || map.isEmpty() ) {
                 return roleService.selectRoleByPage(null, current, size);
             } else {
                 Role role = BeanUtil.fillBeanWithMap(map, new Role(), false);
                 return roleService.selectRoleByPage(role, current, size);
             }
-//        } catch ( Exception e ) {
-//            return new HttpResponseEntity<IPage<Role>>().serverError(null);
-//        }
+        } catch ( Exception e ) {
+            return new HttpResponseEntity<IPage<Role>>().serverError(null);
+        }
     }
 
     /**

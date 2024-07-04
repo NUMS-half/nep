@@ -83,10 +83,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
-                <configuration>
-                    <mainClass>com.neusoft.neu24.user.UserServiceApplication</mainClass>
-                    <skip>true</skip>
-                </configuration>
             </plugin>
         </plugins>
     </build>

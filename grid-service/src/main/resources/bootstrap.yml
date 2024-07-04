@@ -11,7 +11,8 @@ spring:
         heart-beat-timeout: 1000
         group: DEFAULT_GROUP
         server-addr: 8.130.74.245:8848
-        namespace: 6b44e88a-5625-4b96-9a46-218a171eadb3
+        namespace: 5bff0460-4f2b-4187-9f53-64b7f2162707
+      #        namespace: 6b44e88a-5625-4b96-9a46-218a171eadb3
       config:
         file-extension: yaml
         shared-configs:
@@ -19,8 +20,9 @@ spring:
           - data-id: shared-redis.yml
           - data-id: shared-sentinel.yml
           - data-id: shared-seata.yml
+#        namespace: 6b44e88a-5625-4b96-9a46-218a171eadb3
 nep:
   redis:
-#    host: localhost
+    host: localhost
 #    password: neu030713
     service-db: 1

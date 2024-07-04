@@ -77,7 +77,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
         // 4. 校验token是否有效
         HttpResponseEntity<String> response = jwtUtil.parseToken(token);
-        if ( response.getCode() != 200 ) {
+        if ( response.getCode() != 200 || Boolean.FALSE.equals(stringRedisTemplate.hasKey(LOGIN_TOKEN + response.getData())) ) {
             ServerHttpResponse serverHttpResponse = exchange.getResponse();
             serverHttpResponse.setStatusCode(HttpStatus.UNAUTHORIZED);
             logger.warn("【网关】已拦截未授权的请求: {}", request.getPath());

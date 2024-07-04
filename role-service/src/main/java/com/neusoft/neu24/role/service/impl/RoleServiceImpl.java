@@ -18,6 +18,7 @@ import io.lettuce.core.RedisCommandTimeoutException;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.neusoft.neu24.config.RedisConstants.ROLE_PERMISSION_KEY;
@@ -37,6 +39,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
 
     @Resource
     private RoleMapper roleMapper;
+
+    @Resource
+    RabbitTemplate rabbitTemplate;
 
     @Resource
     private RedisTemplate<String, SystemNode> redisTemplate;
@@ -218,9 +223,15 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
         try {
             roleMapper.deleteRoleNodes(roleId);
             redisTemplate.delete(ROLE_PERMISSION_KEY + roleId.toString());
-            return roleMapper.insertRoleAuth(roleId, nodeIds) > 0 ?
-                    new HttpResponseEntity<Boolean>().success(true) :
-                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            if (roleMapper.insertRoleAuth(roleId, nodeIds) > 0) {
+                logger.info("修改角色权限成功, roleId: {}, nodeIds: {}, 即将通知已登录用户刷新权限", roleId, nodeIds);
+                Map<String, Object> message = Map.of("roleId", roleId, "nodeIds", nodeIds);
+                rabbitTemplate.convertAndSend("permission.exchange", "permission.change." + roleId, message);
+                return new HttpResponseEntity<Boolean>().success(true);
+            } else {
+                logger.warn("修改角色权限失败, roleId: {}, nodeIds: {}", roleId, nodeIds);
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            }
         } catch ( DataAccessException e ) {
             return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
         } catch ( Exception e ) {

@@ -1,0 +1,123 @@
+version: "3.8"
+
+# 定义服务
+services:
+  # 1. 网关
+  nep-gateway:
+    build: # 配置镜像创建相关操作
+      context: ./nep-gateway # Dockerfile 所处的相对路径
+      dockerfile: Dockerfile # Dockerfile 名称
+    image: nep-gateway:1.0.0 # 创建的镜像名称与版本
+    container_name: nep-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - nep-net
+  # 2. 用户服务
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    image: user-service:1.0.0
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    networks:
+      - nep-net
+    depends_on:
+      - nep-gateway
+  # 3. 反馈上报服务
+  report-service:
+    build:
+      context: ./report-service
+      dockerfile: Dockerfile
+    image: report-service:1.0.0
+    container_name: report-service
+    ports:
+      - "8082:8082"
+    networks:
+      - nep-net
+    depends_on:
+      - nep-gateway
+  # 4. 统计检测服务
+  statistics-service:
+    build:
+      context: ./statistics-service
+      dockerfile: Dockerfile
+    image: statistics-service:1.0.0
+    container_name: statistics-service
+    ports:
+      - "8083:8083"
+    networks:
+      - nep-net
+    depends_on:
+      - nep-gateway
+  # 5. 网格服务
+  grid-service:
+    build:
+      context: ./grid-service
+      dockerfile: Dockerfile
+    image: grid-service:1.0.0
+    container_name: grid-service
+    ports:
+      - "8084:8084"
+    networks:
+      - nep-net
+    depends_on:
+      - nep-gateway
+  # 6. 角色服务
+  role-service:
+    build:
+      context: ./role-service
+      dockerfile: Dockerfile
+    image: role-service:1.0.0
+    container_name: role-service
+    ports:
+      - "8085:8085"
+    networks:
+      - nep-net
+    depends_on:
+      - nep-gateway
+  # 7. 通知服务
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    image: notification-service:1.0.0
+    container_name: notification-service
+    ports:
+      - "8086:8086"
+    networks:
+      - nep-net
+    depends_on:
+      - nep-gateway
+  # 8. AQI服务
+  aqi-service:
+    build:
+      context: ./aqi-service
+      dockerfile: Dockerfile
+    image: aqi-service:1.0.0
+    container_name: aqi-service
+    ports:
+      - "8087:8087"
+    networks:
+      - nep-net
+    depends_on:
+      - nep-gateway
+  # 9. chat服务
+  chat-service:
+    build:
+      context: ./chat-service
+      dockerfile: Dockerfile
+    image: chat-service:1.0.0
+    container_name: chat-service
+    ports:
+      - "8089:8089"
+    networks:
+      - nep-net
+    depends_on:
+      - nep-gateway
+  # 网络配置
+networks: # 定义网络
+  nep-net: # docker-compose.yml文件中网络的名称
+    name: nep-net # 在 docker 网桥中网络的名称

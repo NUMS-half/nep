@@ -32,7 +32,8 @@
         SELECT DATE_FORMAT(s.confirm_time, '%Y-%m') AS month,
                SUM(IF(s.aqi_id > 2, 1, 0))          AS excessCount
         FROM statistics s
-        GROUP BY DATE_FORMAT(s.confirm_time, '%Y-%m');
+        GROUP BY DATE_FORMAT(s.confirm_time, '%Y-%m')
+        ORDER BY DATE_FORMAT(s.confirm_time, '%Y-%m') DESC;
     </select>
 
     <select id="selectAQIDistribution" resultType="com.neusoft.neu24.dto.AQIDistributeDTO">
@@ -43,7 +44,7 @@
         ORDER BY aqi_id;
     </select>
 
-    <select id="selectStatisticsSummary" resultType="com.neusoft.neu24.dto.StatisticsTotalDTO">
+    <select id="selectStatisticsSummary" parameterType="java.time.LocalDateTime" resultType="com.neusoft.neu24.dto.StatisticsTotalDTO">
         SELECT COUNT(*)                              AS total,
                SUM(IF(aqi_id &lt;= 2, 1, 0))         AS goodCount,
                SUM(IF(aqi_id &gt; 2, 1, 0))          AS pollutionCount,
@@ -51,6 +52,7 @@
                SUM(IF(city_code LIKE '%0100', 1, 0)) AS gridCapitalCityCount,
                COUNT(DISTINCT city_code)             AS gridCityCount
         FROM statistics
+        WHERE confirm_time &lt;= #{time};
     </select>
 
 </mapper>

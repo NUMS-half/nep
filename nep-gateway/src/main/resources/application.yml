@@ -60,7 +60,7 @@ nep:
     location: classpath:nep.jks
     alias: nanhu
     password: neu123456
-    tokenTTL: 30m
+    tokenTTL: 60m
   auth:
     excludePaths: # exclude paths unified config
       - /user/login
@@ -76,4 +76,4 @@ nep:
         - /user/sendSMSCode
         - /sse/**
         - /role/**, /node/**
-    roleServiceBaseUrl: http://localhost:8085
+    roleServiceBaseUrl: http://role-service

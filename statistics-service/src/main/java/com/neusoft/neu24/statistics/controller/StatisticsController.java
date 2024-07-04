@@ -137,12 +137,23 @@ public class StatisticsController {
     }
 
     /**
-     * 按月查询AQI指数超标统计
+     * 按月查询所有AQI指数超标统计
+     */
+    @GetMapping(value = "/excess/tendency/all")
+    public HttpResponseEntity<List<MonthAQIExcessDTO>> getMonthTendency() {
+        try {
+            return statisticsService.selectAQIExcessTendency();
+        } catch ( QueryException e ) {
+            return new HttpResponseEntity<List<MonthAQIExcessDTO>>().serverError(null);
+        }
+    }
+    /**
+     * 按月分页查询AQI指数超标统计
      */
     @GetMapping(value = "/excess/tendency")
-    public HttpResponseEntity<IPage<MonthAQIExcessDTO>> getMonthAQIExcess(@RequestParam("current") int current, @RequestParam("size") int size) {
+    public HttpResponseEntity<IPage<MonthAQIExcessDTO>> getMonthAQIExcessPage(@RequestParam("current") int current, @RequestParam("size") int size) {
         try {
-            return statisticsService.selectAQIExcessTendency(current, size);
+            return statisticsService.selectAQIExcessTendencyPage(current, size);
         } catch ( QueryException e ) {
             return new HttpResponseEntity<IPage<MonthAQIExcessDTO>>().serverError(null);
         }
@@ -161,11 +172,11 @@ public class StatisticsController {
     }
 
     @GetMapping(value = "/summary")
-    public HttpResponseEntity<StatisticsTotalDTO> getStatisticsSummary() {
+    public HttpResponseEntity<Map<String,StatisticsTotalDTO>> getStatisticsSummary() {
         try {
             return statisticsService.selectStatisticsSummary();
         } catch ( QueryException e ) {
-            return new HttpResponseEntity<StatisticsTotalDTO>().serverError(null);
+            return new HttpResponseEntity<Map<String,StatisticsTotalDTO>>().serverError(null);
         }
     }
 }

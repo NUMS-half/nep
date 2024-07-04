@@ -288,9 +288,12 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Report> impleme
             // 3. 信息存在，设置要修改为的状态
             report.setState(state);
             // 4. 更新状态
-            return reportMapper.updateState(report.getState(), report.getReportId()) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(true) :
-                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            if ( reportMapper.updateById(report) > 0) {
+                rabbitTemplate.convertAndSend("user.exchange", "notification." + report.getUserId(), report);
+                return new HttpResponseEntity<Boolean>().success(true);
+            } else {
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            }
         } catch ( Exception e ) {
             logger.error("更新反馈信息: {} 状态时发生异常", reportId, e);
             throw new UpdateException("更新反馈信息状态时发生异常", e);

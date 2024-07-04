@@ -34,16 +34,15 @@ public class PermissionGlobalFilter implements GlobalFilter, Ordered {
 
     private PermissionProperties permissionProperties;
 
-    private WebClient webClient;
+    private WebClient.Builder webClientBuilder;
 
-    private PermissionGlobalFilter() {
-
-    }
+    private PermissionGlobalFilter() {}
 
     @Autowired
     public PermissionGlobalFilter(WebClient.Builder webClientBuilder, PermissionProperties permissionProperties) {
         this.permissionProperties = permissionProperties;
-        this.webClient = webClientBuilder.baseUrl(permissionProperties.getRoleServiceBaseUrl()).build();
+//        this.webClient = webClientBuilder.baseUrl(permissionProperties.getRoleServiceBaseUrl()).build();
+        this.webClientBuilder = webClientBuilder;
     }
 
     @Override
@@ -74,8 +73,8 @@ public class PermissionGlobalFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        return webClient.get()
-                .uri("/role/select?roleId={roleId}", roleId)
+        return webClientBuilder.build().get()
+                .uri("http://role-service/role/select?roleId={roleId}", roleId)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<HttpResponseEntity<List<SystemNode>>>() {})
                 .flatMap(response -> {

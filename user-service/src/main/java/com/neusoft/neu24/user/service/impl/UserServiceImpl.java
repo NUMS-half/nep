@@ -1,14 +1,15 @@
 package com.neusoft.neu24.user.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.neusoft.neu24.client.RoleClient;
 import com.neusoft.neu24.entity.*;
 import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.exceptions.LoginException;
@@ -28,6 +29,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -63,6 +65,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Resource
     StringRedisTemplate stringRedisTemplate;
 
+    @Resource
+    RabbitTemplate rabbitTemplate;
+
+    private final RoleClient roleClient;
+
     /**
      * 验证用户登录
      *
@@ -97,7 +104,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             logger.info("用户 {} 登录成功", username);
             return handleLogin(user);
         } catch ( Exception e ) {
-            throw new LoginException(e.getMessage(),e);
+            throw new LoginException(e.getMessage(), e);
         }
     }
 
@@ -219,11 +226,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
             if ( user != null ) {
                 queryWrapper
-                        .like(User::getUsername, user.getUsername())
+                        .like(StringUtils.isNotBlank(user.getUsername()), User::getUsername, user.getUsername())
                         .or()
-                        .like(User::getRealName, user.getRealName())
+                        .like(StringUtils.isNotBlank(user.getRealName()), User::getRealName, user.getRealName())
                         .or()
-                        .like(User::getTelephone, user.getTelephone());
+                        .like(StringUtils.isNotBlank(user.getTelephone()), User::getTelephone, user.getTelephone());
+                queryWrapper.eq(user.getRoleId() != null, User::getRoleId, user.getRoleId());
             }
             pages = getBaseMapper().selectPage(page, queryWrapper.ne(User::getStatus, -1));
             return pages == null || pages.getTotal() == 0 ?
@@ -376,6 +384,35 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     /**
+     * 管理员添加用户信息
+     *
+     * @param user 用户信息
+     * @return 是否添加成功
+     */
+    @Override
+    public HttpResponseEntity<Boolean> addUser(User user) {
+        // 校验手机号合规性
+        if ( !RegexUtils.isPhoneValid(user.getTelephone()) ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.PHONE_INVALID);
+        }
+        user.setPassword(SecureUtil.md5(user.getPassword()));
+        try {
+            // 插入用户信息
+            if ( userMapper.insert(user) > 0 ) {
+                logger.info("用户 {} 添加成功", user.getUserId());
+                return new HttpResponseEntity<Boolean>().success(true);
+            } else {
+                logger.info("用户 {} 添加失败", user.getUserId());
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.ADD_FAIL);
+            }
+        } catch ( DataAccessException e ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.ADD_FAIL);
+        } catch ( Exception e ) {
+            throw new SaveException("注册用户时发生异常", e);
+        }
+    }
+
+    /**
      * 更新用户信息
      *
      * @param user 用户信息
@@ -389,7 +426,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         // 获取原本的用户，校验用户是否存在
         User oldUser;
-        Map<Object,Object> userMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + user.getUserId());
+        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(LOGIN_TOKEN + user.getUserId());
         if ( userMap.isEmpty() ) {
             oldUser = userMapper.selectById(user.getUserId());
         } else {
@@ -405,14 +442,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 // 先对新密码进行MD5加密
                 String newPassword = SecureUtil.md5(user.getPassword());
                 // 判断新密码是否与旧密码相同
-                    if ( newPassword.equals(oldUser.getPassword()) ) {
+                if ( newPassword.equals(oldUser.getPassword()) ) {
                     return new HttpResponseEntity<Boolean>().fail(ResponseEnum.PASSWORD_SAME);
                 }
-                // 不相同时，更新密码
-                user.setPassword(newPassword);
+                if ( !user.getPassword().equals(oldUser.getPassword()) ) {
+                    user.setPassword(newPassword);
+                }
             }
             if ( userMapper.updateById(user) != 0 ) {
                 refreshUserCache(user);
+                // 当角色发生变化时
+                if ( !user.getRoleId().equals(oldUser.getRoleId()) ) {
+                    rabbitTemplate.convertAndSend("role.exchange", "role.change." + user.getUserId(), user);
+                }
                 logger.info("更新用户 {} 信息成功", user.getUserId());
                 return new HttpResponseEntity<Boolean>().success(true);
             } else {
@@ -583,12 +625,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             // 2. 保存用户信息到Redis缓存中
             Map<String, Object> userMap = convertUserToMap(user);
             logger.info("用户 {} 登录成功，缓存用户数据", userMap);
-            stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
-            // 3. 为Redis的数据设置与token一样的有效期
-            stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
 
-            // 4. 登录成功，返回用户信息
-            return new HttpResponseEntity<UserDTO>().success(ResponseEnum.LOGIN_SUCCESS, new UserDTO(user));
+            HttpResponseEntity<List<Integer>> response = roleClient.selectSystemNodeById(user.getRoleId());
+            if ( response.getCode() == 200 ) {
+                UserDTO userDTO = new UserDTO(user);
+                userDTO.setPermissions(response.getData());
+                userMap.put("permissions", response.getData());
+                stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
+                // 3. 为Redis的数据设置与token一样的有效期
+                stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
+                // 4. 返回登录成功的响应
+                return new HttpResponseEntity<UserDTO>().success(ResponseEnum.LOGIN_SUCCESS, userDTO);
+            }
+            stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
+            stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
+            return new HttpResponseEntity<UserDTO>().fail(ResponseEnum.PERMISSION_FAIL, new UserDTO(user));
         } catch ( Exception e ) {
             throw new RedisException("登录成功后，缓存用户数据处理发生异常", e);
         }
@@ -599,10 +650,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     private void refreshUserCache(@NotNull User user) throws RedisException {
 //        try {
-            user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
-            Map<String, Object> userMap = convertUserToMap(user);
-            stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
-            stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
+        if ( Boolean.FALSE.equals(stringRedisTemplate.hasKey(LOGIN_TOKEN + user.getUserId())) ) {
+            return;
+        }
+        user.setToken(jwtUtil.createToken(user, jwtProperties.getTokenTTL()));
+        Map<String, Object> userMap = convertUserToMap(user);
+        stringRedisTemplate.opsForHash().putAll(LOGIN_TOKEN + user.getUserId(), userMap);
+        stringRedisTemplate.expire(LOGIN_TOKEN + user.getUserId(), jwtProperties.getTokenTTL());
 //        } catch ( Exception e ) {
 //            throw new RedisException("更新用户信息后，刷新缓存数据发生异常", e);
 //        }

@@ -1,5 +1,6 @@
 package com.neusoft.neu24.user.service;
 
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
@@ -34,6 +35,13 @@ public interface IUserService extends IService<User> {
      * @return 注册是否成功
      */
     HttpResponseEntity<UserDTO> register(User user);
+
+    /**
+     * 管理员添加用户信息
+     * @param user 用户信息
+     * @return 是否添加成功
+     */
+    HttpResponseEntity<Boolean> addUser(User user);
 
     /**
      * 更新用户信息业务

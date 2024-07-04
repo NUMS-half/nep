@@ -13,6 +13,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.cache.annotation.Cacheable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -51,5 +52,5 @@ public interface StatisticsMapper extends BaseMapper<Statistics> {
      * @return 总计信息
      */
     @MapKey("total")
-    StatisticsTotalDTO selectStatisticsSummary();
+    StatisticsTotalDTO selectStatisticsSummary(@Param("time")LocalDateTime time);
 }

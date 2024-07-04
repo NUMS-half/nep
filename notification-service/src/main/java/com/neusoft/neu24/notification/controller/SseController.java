@@ -87,11 +87,12 @@ public class SseController {
 
         if ( emitter != null ) {
             try {
-                logger.info("从消息队列收到: 来自 {} 的消息 {}", routingKey, message);
+                logger.info("从消息队列收到: 来自 {} 的通知消息 {}", routingKey, message);
                 emitter.send(SseEmitter.event().name("message").data(message, MediaType.APPLICATION_JSON));
                 channel.basicAck(deliveryTag, false); // 消息确认
             } catch ( IOException e ) {
-                emitters.remove(userId);
+                logger.error("发生异常，消息发送失败: {}", e.getMessage(), e);
+//                emitters.remove(userId);
                 try {
                     channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
                 } catch ( IOException ioException ) {
@@ -105,6 +106,66 @@ public class SseController {
                 logger.error("拒绝消费消息失败", e);
             }
         }
+    }
 
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "permission.queue", durable = "true"),
+            exchange = @Exchange(name = "permission.exchange", type = ExchangeTypes.TOPIC),
+            key = {"permission.change.#"}
+    ))
+    public void listenPermissionChange(@Payload Map<String, Object> message,
+                                       @Header("amqp_receivedRoutingKey") String routingKey,
+                                       @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag,
+                                       Channel channel) {
+        try {
+            try {
+                for ( Map.Entry<String, SseEmitter> entry : emitters.entrySet() ) {
+                    SseEmitter emitter = entry.getValue();
+                    logger.info("从消息队列收到: 来自 {} 的权限更改消息 {}", routingKey, message);
+                    emitter.send(SseEmitter.event().name("updatePermissions").data(message, MediaType.APPLICATION_JSON));
+                }
+                channel.basicAck(deliveryTag, false); // 消息确认
+            } catch ( IOException e ) {
+                logger.error("发生异常，消息发送失败: {}", e.getMessage(), e);
+                channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
+            }
+        } catch ( IOException e ) {
+            logger.error("拒绝消费消息失败", e);
+        }
+    }
+
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "role.queue", durable = "true"),
+            exchange = @Exchange(name = "role.exchange", type = ExchangeTypes.TOPIC),
+            key = {"role.change.#"}
+    ))
+    public void listenRoleChange(@Payload Map<String, Object> message,
+                                 @Header("amqp_receivedRoutingKey") String routingKey,
+                                 @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag,
+                                 Channel channel) {
+        // 获取routineKey中的用户ID
+        String userId = routingKey.substring(routingKey.lastIndexOf('.') + 1);
+        // 在emitters中查找对应ID的SseEmitter
+        SseEmitter emitter = emitters.get(userId);
+        if ( emitter != null ) {
+            try {
+                logger.info("从消息队列收到: 来自 {} 的角色更改消息 {}", routingKey, message);
+                emitter.send(SseEmitter.event().name("updateRole").data(message, MediaType.APPLICATION_JSON));
+                channel.basicAck(deliveryTag, false); // 消息确认
+            } catch ( IOException e ) {
+                try {
+                    logger.error("发生异常，消息发送失败: {}", e.getMessage(), e);
+                    channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
+                } catch ( IOException ioe ) {
+                    logger.error("拒绝消费消息失败", ioe);
+                }
+            }
+        } else {
+            try {
+                channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
+            } catch ( IOException e ) {
+                logger.error("拒绝消费消息失败", e);
+            }
+        }
     }
 }

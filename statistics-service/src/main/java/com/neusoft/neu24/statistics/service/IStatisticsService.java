@@ -3,7 +3,6 @@ package com.neusoft.neu24.statistics.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.*;
 import com.neusoft.neu24.entity.HttpResponseEntity;
-import com.neusoft.neu24.entity.Report;
 import com.neusoft.neu24.entity.Statistics;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -62,10 +61,16 @@ public interface IStatisticsService extends IService<Statistics> {
     HttpResponseEntity<List<ItemizedStatisticsDTO>> selectItemizedStatistics(String provinceCode);
 
     /**
-     * 按月查询AQI指数超标统计
+     * 按月查询所有AQI指数超标统计
+     * @return AQI超标趋势统计数据
+     */
+    HttpResponseEntity<List<MonthAQIExcessDTO>> selectAQIExcessTendency();
+
+    /**
+     * 按月分页查询AQI指数超标统计
      * @return AQI超标趋势统计
      */
-    HttpResponseEntity<IPage<MonthAQIExcessDTO>> selectAQIExcessTendency(int current, int size);
+    HttpResponseEntity<IPage<MonthAQIExcessDTO>> selectAQIExcessTendencyPage(int current, int size);
 
     /**
      * AQI指数等级分布统计
@@ -73,5 +78,5 @@ public interface IStatisticsService extends IService<Statistics> {
      */
     HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution();
 
-    HttpResponseEntity<StatisticsTotalDTO> selectStatisticsSummary();
+    HttpResponseEntity<Map<String,StatisticsTotalDTO>> selectStatisticsSummary();
 }

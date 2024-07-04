@@ -217,6 +217,17 @@ public class UserController {
         }
     }
 
+    @PostMapping(value = "/add", headers = "Accept=application/json")
+    public HttpResponseEntity<Boolean> addUser(@RequestBody Map<String, Object> newUserInfo) {
+        User user = BeanUtil.fillBeanWithMap(newUserInfo, new User(), false);
+        try {
+            return userService.addUser(user);
+        } catch ( SaveException e ) {
+            logger.error("添加用户发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
+    }
+
 
     /**
      * <b>更新用户信息<b/>

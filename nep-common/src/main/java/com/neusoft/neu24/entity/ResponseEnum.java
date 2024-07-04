@@ -39,9 +39,10 @@ public enum ResponseEnum {
 
 
     // 2.登录
-    LOGIN_CONTENT_IS_NULL(301, "【账号】或【密码】不能为空"),
     LOGIN_FAIL(301, "【账号】或【密码】错误"),
-    SMS_CODE_ERROR(301, "登录验证码【错误】或【过期】"),
+    PERMISSION_FAIL(302, "用户权限获取失败"),
+    SMS_CODE_ERROR(303, "登录验证码【错误】或【过期】"),
+    LOGIN_CONTENT_IS_NULL(304, "【账号】或【密码】不能为空"),
 
     // 3.注册/修改
     REGISTER_FAIL(302, "注册失败：用户名/手机号【已被注册】或【输入不合法】"),

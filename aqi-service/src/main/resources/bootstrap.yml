@@ -11,16 +11,17 @@ spring:
         heart-beat-timeout: 1000
         group: DEFAULT_GROUP
         server-addr: 8.130.74.245:8848
-        namespace: 5bff0460-4f2b-4187-9f53-64b7f2162707 #dev
-#        namespace: 6b44e88a-5625-4b96-9a46-218a171eadb3 # product
+#        namespace: 5bff0460-4f2b-4187-9f53-64b7f2162707 #dev
+        namespace: 6b44e88a-5625-4b96-9a46-218a171eadb3 # production
       config:
         file-extension: yaml
         shared-configs:
-          - data-id: shared-jdbc-common.yml # shared jdbc config file
+          - data-id: shared-jdbc-common.yml
           - data-id: shared-redis.yml
           - data-id: shared-sentinel.yml
-#        namespace: 6b44e88a-5625-4b96-9a46-218a171eadb3
+          - data-id: shared-redis.yml
+        namespace: 6b44e88a-5625-4b96-9a46-218a171eadb3 # production
 
-nep:
-  redis:
-    host: localhost
+#nep:
+#  redis:
+#    host: localhost

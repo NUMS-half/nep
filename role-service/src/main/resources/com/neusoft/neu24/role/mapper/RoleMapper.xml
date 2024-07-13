@@ -12,6 +12,9 @@
           AND NOT (rnr.node_id IN (SELECT DISTINCT pid
                                    FROM system_node
                                    WHERE pid IS NOT NULL))
+          AND NOT (rnr.node_id IN (SELECT system_node.node_id
+                                   FROM system_node
+                                   WHERE state != 1))
     </select>
 
     <select id="selectNodesByRoleId" resultType="com.neusoft.neu24.entity.SystemNode" parameterType="java.lang.Integer">
@@ -28,6 +31,7 @@
           AND NOT (rnr.role_id IN (SELECT role_id
                                    FROM role
                                    WHERE state != 1))
+          AND sn.state = 1
     </select>
 
 

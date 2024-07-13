@@ -73,6 +73,7 @@ nep:
         - /user/login
         - /user/login/phone
         - /user/register
+        - /user/logout
         - /user/sendSMSCode
         - /sse/**
         - /role/**, /node/**

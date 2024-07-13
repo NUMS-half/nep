@@ -18,9 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
+ * <b>Statistics 类 Mapper 接口<b/>
  *
  * @author Team-NEU-NanHu
  * @since 2024-05-21
@@ -49,6 +47,7 @@ public interface StatisticsMapper extends BaseMapper<Statistics> {
 
     /**
      * 查询总计信息
+     * @param time 查询截至的时间
      * @return 总计信息
      */
     @MapKey("total")

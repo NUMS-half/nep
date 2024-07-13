@@ -14,12 +14,24 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * <b>反馈信息状态更新MQ监听类<b/>
+ *
+ * @author Team-NEU-NanHu
+ * @since 2024-05-21
+ */
 @Slf4j
 @Component
 public class ReportStateListener {
 
+    /**
+     * 日志记录器
+     */
     private static final Logger logger = LoggerFactory.getLogger(ReportStateListener.class);
 
+    /**
+     * 反馈信息服务接口
+     */
     @Resource
     private IReportService reportService;
 

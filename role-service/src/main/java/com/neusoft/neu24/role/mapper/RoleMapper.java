@@ -10,6 +10,12 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 
+/**
+ * <b>Role类 Mapper 接口</b>
+ *
+ * @since 2024-05-21
+ * @author Team-NEU-NanHu
+ */
 @Mapper
 public interface RoleMapper extends BaseMapper<Role> {
 
@@ -23,15 +29,34 @@ public interface RoleMapper extends BaseMapper<Role> {
     int updateState(@Param("roleId") Integer roleId, @Param("state") Integer state);
 
     /**
-     * 查询启用的角色的权限(子节点)列表
+     * 查询启用的角色的权限ID(子节点)列表
      * @param roleId 角色ID
-     * @return 角色权限列表
+     *
+     * @return 角色权限ID列表
      */
     List<Integer> selectNodeIdsByRoleId(@Param("roleId") Integer roleId);
 
+    /**
+     * 查询启用的角色的权限列表
+     *
+     * @param roleId 角色ID
+     * @return 角色权限列表
+     */
     List<SystemNode> selectNodesByRoleId(@Param("roleId") Integer roleId);
 
+    /**
+     * 逻辑删除角色
+     *
+     * @param roleId 角色ID
+     * @return 影响的行数
+     */
     int deleteRoleNodes(@Param("roleId") Integer roleId);
 
+    /**
+     * 为角色添加权限
+     * @param roleId  角色ID
+     * @param nodeIds 权限ID列表
+     * @return 影响的行数
+     */
     int insertRoleAuth(@Param("roleId") Integer roleId, @Param("nodeIds") List<Integer> nodeIds);
 }

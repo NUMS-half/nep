@@ -45,21 +45,27 @@ public enum ResponseEnum {
     LOGIN_CONTENT_IS_NULL(304, "【账号】或【密码】不能为空"),
 
     // 3.注册/修改
-    REGISTER_FAIL(302, "注册失败：用户名/手机号【已被注册】或【输入不合法】"),
+    REGISTER_FAIL(301, "注册失败：输入不合法，请检查输入"),
     PASSWORD_SAME(302, "新密码不能与旧密码相同"),
+    USERNAME_HAS_USED(303, "用户名已被使用"),
+    PHONE_HAS_USED(304, "手机号已被使用"),
 
     // 4.反馈上报
-    REPORT_FAIL_ESTIMATE_INVALID(303, "预估AQI等级不合法"),
-    REPORT_NOT_EXIST(303, "反馈信息不存在"),
+    REPORT_FAIL_ESTIMATE_INVALID(301, "预估AQI等级不合法"),
+    REPORT_NOT_EXIST(302, "反馈信息不存在"),
 
     // 5.反馈指派
-    ASSIGN_FAIL_HAS_ASSIGNED(304, "该反馈信息【已被指派】或【已完成实测】"),
-    ASSIGN_FAIL_UPDATE_FAIL(304, "反馈信息更新失败，指派失败"),
-    ASSIGN_FAIL_NO_GM(304, "无匹配的网格员"),
+    ASSIGN_FAIL_HAS_ASSIGNED(301, "该反馈信息【已被指派】或【已完成实测】"),
+    ASSIGN_FAIL_UPDATE_FAIL(302, "反馈信息更新失败，指派失败"),
+    ASSIGN_FAIL_NO_GM(303, "无匹配的网格员"),
 
     // 6.实测
-    STATISTICS_VALUE_INVALID(305, "实测值不合法"),
-    REPORT_HAS_CONFIRMED(305, "该反馈信息【已被确认】"),
+    STATISTICS_VALUE_INVALID(301, "实测值不合法"),
+    REPORT_HAS_CONFIRMED(302, "该反馈信息【已被确认】"),
+
+    // 7.注销登录
+    LOGOUT_FAIL(301, "注销失败"),
+    HAS_LOGOUT(302, "用户已注销"),
 
     BAD_REQUEST(400, "请求失败"),
     UNAUTHORIZED(401, "未授权的请求，请登录后重试"),

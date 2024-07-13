@@ -1,6 +1,6 @@
 version: "3.8"
 
-# 定义服务
+# 服务定义
 services:
   # 1. 网关
   nep-gateway:
@@ -8,11 +8,13 @@ services:
       context: ./nep-gateway # Dockerfile 所处的相对路径
       dockerfile: Dockerfile # Dockerfile 名称
     image: nep-gateway:1.0.0 # 创建的镜像名称与版本
-    container_name: nep-gateway
+    container_name: nep-gateway # 容器名称
     ports:
-      - "8080:8080"
+      - "8080:8080" # 端口映射
+    volumes:
+      - ./.logs/nep-gateway:/.logs # 日志目录数据卷挂载
     networks:
-      - nep-net
+      - nep-net # 网桥配置
   # 2. 用户服务
   user-service:
     build:
@@ -22,6 +24,8 @@ services:
     container_name: user-service
     ports:
       - "8081:8081"
+    volumes:
+      - ./.logs/user-service:/.logs
     networks:
       - nep-net
     depends_on:
@@ -35,6 +39,8 @@ services:
     container_name: report-service
     ports:
       - "8082:8082"
+    volumes:
+      - ./.logs/report-service:/.logs
     networks:
       - nep-net
     depends_on:
@@ -48,6 +54,8 @@ services:
     container_name: statistics-service
     ports:
       - "8083:8083"
+    volumes:
+      - ./.logs/statistics-service:/.logs
     networks:
       - nep-net
     depends_on:
@@ -61,6 +69,8 @@ services:
     container_name: grid-service
     ports:
       - "8084:8084"
+    volumes:
+      - ./.logs/grid-service:/.logs
     networks:
       - nep-net
     depends_on:
@@ -76,6 +86,8 @@ services:
       - "8085:8085"
     networks:
       - nep-net
+    volumes:
+      - ./.logs/role-service:/.logs
     depends_on:
       - nep-gateway
   # 7. 通知服务
@@ -87,6 +99,8 @@ services:
     container_name: notification-service
     ports:
       - "8086:8086"
+    volumes:
+      - ./.logs/notification-service:/.logs
     networks:
       - nep-net
     depends_on:
@@ -100,6 +114,8 @@ services:
     container_name: aqi-service
     ports:
       - "8087:8087"
+    volumes:
+      - ./.logs/aqi-service:/.logs
     networks:
       - nep-net
     depends_on:
@@ -113,6 +129,8 @@ services:
     container_name: chat-service
     ports:
       - "8089:8089"
+    volumes:
+      - ./.logs/chat-service:/.logs
     networks:
       - nep-net
     depends_on:

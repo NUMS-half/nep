@@ -22,52 +22,85 @@ import java.util.List;
 
 import static com.neusoft.neu24.config.RedisConstants.AQI_KEY;
 
+
+/**
+ * <b>AQI服务实现类</b>
+ *
+ * @author Team-NEU-NanHu
+ * @since 2024-05-21
+ */
 @Slf4j
 @Service
 @Transactional
 public class AqiServiceImpl extends ServiceImpl<AqiMapper, Aqi> implements IAqiService {
 
+    /**
+     * 日志记录器
+     */
     private static final Logger logger = LoggerFactory.getLogger(AqiServiceImpl.class);
 
+    /**
+     * Redis操作工具
+     */
     @Resource
     private RedisTemplate<String, Aqi> redisTemplate;
 
+    /**
+     * AQI数据访问 Mapper
+     */
     @Resource
     private AqiMapper aqiMapper;
 
+    /**
+     * 获取所有AQI信息
+     * @return 所有AQI信息
+     */
     @Override
     @Transactional(readOnly = true)
     public HttpResponseEntity<List<Aqi>> getAllApiInfo() throws QueryException {
         try {
+            // 1. 获取所有AQI信息列表
             List<Aqi> aqiList = getAqiList();
             if ( aqiList == null || aqiList.isEmpty() ) {
                 return new HttpResponseEntity<List<Aqi>>().resultIsNull(null);
             }
+            // 2. 返回成功响应
+            logger.info("获取所有AQI信息成功");
             return new HttpResponseEntity<List<Aqi>>().success(aqiList);
         } catch ( Exception e ) {
-            logger.error("获取所有AQI信息时发生异常", e);
+            // 3. 异常处理
+            logger.error("获取所有AQI信息时发生异常: {}", e.getMessage(), e);
             throw new QueryException("获取所有AQI信息时发生异常", e);
         }
     }
 
+    /**
+     * 校验检测信息各项指标的合法性
+     * @param statistics 检测信息
+     * @return 是否合法
+     */
     @Override
     @Transactional(readOnly = true)
     public HttpResponseEntity<Boolean> validateAqi(Statistics statistics) throws QueryException {
         try {
+            // 1. 实例化 AQI 计算器工具
             AqiCalculator calculator = new AqiCalculator(getAqiList());
+            // 2. 校验 AQI 各项数值合法性
             boolean resAqi = calculator.validateAqi(statistics);
             boolean resSo2 = calculator.validateItem(statistics.getSo2Level(), statistics.getSo2Value(), "so2");
             boolean resCo = calculator.validateItem(statistics.getCoLevel(), statistics.getCoValue(), "co");
             boolean resSpm = calculator.validateItem(statistics.getSpmLevel(), statistics.getSpmValue(), "spm");
+            // 3. 返回校验结果
             if ( resAqi && resSo2 && resCo && resSpm ) {
-                logger.info("检测数值校验成功");
+                logger.info("AQI检测数值校验成功");
                 return new HttpResponseEntity<Boolean>().success(true);
             } else {
-                logger.info("检测数值校验失败");
+                logger.info("AQI检测数值校验失败");
                 return new HttpResponseEntity<Boolean>().fail(ResponseEnum.STATISTICS_VALUE_INVALID);
             }
         } catch ( Exception e ) {
-            logger.error("校验AQI各项数值合法性时发生异常", e);
+            // 4. 异常处理
+            logger.error("校验AQI各项数值合法性时发生异常: {}", e.getMessage(), e);
             throw new QueryException("校验AQI各项数值合法性时发生异常", e);
         }
     }
@@ -94,17 +127,25 @@ public class AqiServiceImpl extends ServiceImpl<AqiMapper, Aqi> implements IAqiS
 //        return null;
 //    }
 
+    /**
+     * 获取所有AQI列表
+     * @return AQI列表
+     */
     private List<Aqi> getAqiList() {
         List<Aqi> aqiList;
         try {
+            // 1. 先从 Redis 中获取 AQI 列表
             aqiList = redisTemplate.opsForList().range(AQI_KEY, 0, -1);
             if ( aqiList == null || aqiList.isEmpty() ) {
+                // 2. 如果 Redis 中没有 AQI 列表，则从数据库中查询
                 aqiList = aqiMapper.selectList(null);
                 redisTemplate.opsForList().rightPushAll(AQI_KEY, aqiList);
             }
         } catch ( RedisCommandTimeoutException e ) {
+            // 3. 如果 Redis 操作超时，则直接从数据库中查询
             aqiList = aqiMapper.selectList(null);
         }
+        // 4. 返回 AQI 列表
         return aqiList;
     }
 }

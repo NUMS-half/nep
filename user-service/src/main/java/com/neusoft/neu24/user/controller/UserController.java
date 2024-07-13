@@ -5,10 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.neusoft.neu24.dto.UserDTO;
 import com.neusoft.neu24.entity.HttpResponseEntity;
 import com.neusoft.neu24.entity.User;
-import com.neusoft.neu24.exceptions.LoginException;
-import com.neusoft.neu24.exceptions.QueryException;
-import com.neusoft.neu24.exceptions.SaveException;
-import com.neusoft.neu24.exceptions.UpdateException;
+import com.neusoft.neu24.exceptions.*;
 import com.neusoft.neu24.user.config.UserProperties;
 import com.neusoft.neu24.user.service.IUserService;
 import com.neusoft.neu24.utils.UserContext;
@@ -55,13 +52,30 @@ public class UserController {
         // 解析前端请求的用户数据
         String username = (String) loginInfo.get("username");
         String password = (String) loginInfo.get("password");
-//        try {
+        try {
             // 登录校验
             return userService.login(username, password);
-//        } catch ( LoginException e ) {
-//            logger.error("用户登录校验发生异常: {}", e.getMessage());
-//            return new HttpResponseEntity<UserDTO>().serverError(null);
-//        }
+        } catch ( AuthException e ) {
+            logger.error("用户登录校验发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<UserDTO>().serverError(null);
+        }
+    }
+
+    /**
+     * <b>用户注销<b/>
+     *
+     * @param userId 用户ID
+     * @return 注销结果
+     */
+    @PostMapping("/logout")
+    public HttpResponseEntity<Boolean> logout(@RequestParam("userId") String userId) {
+        try {
+            // 注销
+            return userService.logout(userId);
+        } catch ( AuthException e ) {
+            logger.error("用户注销发生异常: {}", e.getMessage());
+            return new HttpResponseEntity<Boolean>().serverError(null);
+        }
     }
 
     /**
@@ -95,7 +109,7 @@ public class UserController {
         try {
             // 登录校验
             return userService.loginByPhone(phone, smsCode);
-        } catch ( LoginException e ) {
+        } catch ( AuthException e ) {
             logger.error("用户手机登录校验发生异常: {}", e.getMessage());
             return new HttpResponseEntity<UserDTO>().serverError(null);
         }

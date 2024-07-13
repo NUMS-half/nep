@@ -2,18 +2,34 @@ package com.neusoft.neu24.aqi.utils;
 
 import com.neusoft.neu24.entity.Aqi;
 import com.neusoft.neu24.entity.Statistics;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * <b>AQI计算器</b>
+ *
+ * @since 2024-05-21
+ * @author Team-NEU-NanHu
+ */
 public class AqiCalculator {
 
+    /**
+     * AQI列表
+     */
     private final List<Aqi> aqiList;
 
+    /**
+     * AQI映射
+     */
     private final Map<Integer, Aqi> aqiMap;
 
+    /**
+     * 构造方法
+     *
+     * @param aqiList AQI列表
+     */
     public AqiCalculator(List<Aqi> aqiList) {
         this.aqiList = aqiList;
         this.aqiMap = aqiList.stream().collect(Collectors.toMap(Aqi::getAqiId, a -> a));
@@ -21,7 +37,7 @@ public class AqiCalculator {
 
     /**
      * 验证传入的实测值是否合法
-     *
+     * @param statistics 检测信息
      * @return 是否合法
      */
     public boolean validateAqi(Statistics statistics) {
@@ -64,7 +80,12 @@ public class AqiCalculator {
         return Math.max(Math.max(a, b), c);
     }
 
-    // 根据污染物类型和浓度计算AQI值
+    /**
+     * 根据污染物类型和浓度计算AQI值
+     * @param pollutant 污染物类型
+     * @param concentration 浓度
+     * @return AQI值
+     */
     public int calculateAQI(String pollutant, double concentration) {
         double[] breakpoints = new double[aqiList.size() + 1];
         double[] aqiValues = new double[aqiList.size() + 1];
@@ -107,7 +128,13 @@ public class AqiCalculator {
         return calculateAQI(concentration, breakpoints, aqiValues);
     }
 
-    // 根据浓度值和分段点和对应AQI值计算AQI值
+    /**
+     * 根据浓度值和分段点和对应AQI值计算AQI值
+     * @param concentration 浓度值
+     * @param breakpoints 分段点
+     * @param aqiValues 对应AQI值
+     * @return AQI值
+     */
     private int calculateAQI(double concentration, double[] breakpoints, double[] aqiValues) {
         double result = 0;
         for ( int i = 0; i < breakpoints.length - 1; i++ ) {
@@ -120,7 +147,11 @@ public class AqiCalculator {
         return (int) Math.ceil(result);
     }
 
-    // 获取健康关注程度
+    /**
+     * 获取健康关注程度
+     * @param aqi AQI值
+     * @return 健康关注程度
+     */
     public String getHealthConcern(int aqi) {
         for ( Aqi a : aqiList ) {
             if ( aqi >= a.getAqiValMin() && aqi <= a.getAqiValMax() ) {

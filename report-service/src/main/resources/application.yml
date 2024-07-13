@@ -3,7 +3,7 @@ server:
 
 logging:
   file:
-    name: .logs/report-service.log
+    name: .logs/report-service.log # report-service log file position
   level:
     root: info
-    com.neusoft.neu24.report.mapper: debug
+#    com.neusoft.neu24.report.mapper: debug # print the executed SQL from Mybatis

@@ -20,11 +20,20 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * <b>服务器通知与SSE连接前端控制器</b>
+ *
+ * @since 2024-05-21
+ * @author Team-NEU-NanHu
+ */
 @Slf4j
 @RestController
 @RequestMapping("/sse")
 public class SseController {
 
+    /**
+     * 日志记录器
+     */
     private static final Logger logger = LoggerFactory.getLogger(SseController.class);
 
     /**
@@ -41,6 +50,10 @@ public class SseController {
      */
     @GetMapping(value = "/setup/{userId}", produces = {MediaType.TEXT_EVENT_STREAM_VALUE})
     public SseEmitter setup(@PathVariable String userId) {
+        if ( emitters.containsKey(userId) ) {
+            logger.info("【连接已存在】用户 {} 连接已存在", userId);
+            return emitters.get(userId);
+        }
         SseEmitter emitter = new SseEmitter(0L); // no timeout
         emitters.put(userId, emitter);
 
@@ -64,6 +77,8 @@ public class SseController {
 
     /**
      * 移除用户连接
+     *
+     * @param userId 用户ID
      */
     @GetMapping(value = "/close/{userId}", produces = {MediaType.TEXT_EVENT_STREAM_VALUE})
     public void close(@PathVariable("userId") String userId) {
@@ -71,6 +86,13 @@ public class SseController {
         logger.info("【连接关闭】用户 {} 主动断开连接", userId);
     }
 
+    /**
+     * 监听用户队列通知
+     * @param message     消息
+     * @param routingKey  路由键(以用户ID区分)
+     * @param deliveryTag 传递标签
+     * @param channel     通道
+     */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "user.queue", durable = "true"),
             exchange = @Exchange(name = "user.exchange", type = ExchangeTypes.TOPIC),
@@ -94,6 +116,7 @@ public class SseController {
                 logger.error("发生异常，消息发送失败: {}", e.getMessage(), e);
 //                emitters.remove(userId);
                 try {
+                    emitter.send(SseEmitter.event().name("error").data("消息发送失败"));
                     channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
                 } catch ( IOException ioException ) {
                     logger.error("拒绝消费消息失败", ioException);
@@ -108,6 +131,13 @@ public class SseController {
         }
     }
 
+    /**
+     * 监听权限更改消息
+     * @param message     消息
+     * @param routingKey  路由键
+     * @param deliveryTag 传递标签
+     * @param channel     通道
+     */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "permission.queue", durable = "true"),
             exchange = @Exchange(name = "permission.exchange", type = ExchangeTypes.TOPIC),
@@ -127,6 +157,10 @@ public class SseController {
                 channel.basicAck(deliveryTag, false); // 消息确认
             } catch ( IOException e ) {
                 logger.error("发生异常，消息发送失败: {}", e.getMessage(), e);
+                for ( Map.Entry<String, SseEmitter> entry : emitters.entrySet() ) {
+                    SseEmitter emitter = entry.getValue();
+                    emitter.send(SseEmitter.event().name("error").data("消息发送失败"));
+                }
                 channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
             }
         } catch ( IOException e ) {
@@ -134,6 +168,13 @@ public class SseController {
         }
     }
 
+    /**
+     * 监听角色更改消息
+     * @param message     消息
+     * @param routingKey  路由键
+     * @param deliveryTag 传递标签
+     * @param channel     通道
+     */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "role.queue", durable = "true"),
             exchange = @Exchange(name = "role.exchange", type = ExchangeTypes.TOPIC),
@@ -155,6 +196,7 @@ public class SseController {
             } catch ( IOException e ) {
                 try {
                     logger.error("发生异常，消息发送失败: {}", e.getMessage(), e);
+                    emitter.send(SseEmitter.event().name("error").data("消息发送失败"));
                     channel.basicNack(deliveryTag, false, true); // 消息拒绝并重新入队
                 } catch ( IOException ioe ) {
                     logger.error("拒绝消费消息失败", ioe);

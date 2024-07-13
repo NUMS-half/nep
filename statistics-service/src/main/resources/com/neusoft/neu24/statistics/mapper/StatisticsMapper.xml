@@ -33,7 +33,7 @@
                SUM(IF(s.aqi_id > 2, 1, 0))          AS excessCount
         FROM statistics s
         GROUP BY DATE_FORMAT(s.confirm_time, '%Y-%m')
-        ORDER BY DATE_FORMAT(s.confirm_time, '%Y-%m') DESC;
+        ORDER BY DATE_FORMAT(s.confirm_time, '%Y-%m');
     </select>
 
     <select id="selectAQIDistribution" resultType="com.neusoft.neu24.dto.AQIDistributeDTO">

@@ -5,6 +5,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * <b>RestTemplate 配置类</b>
+ *
+ * @since 2024-05-21
+ * @author Team-NEU-NanHu
+ */
 @Configuration
 public class RestTemplateConfig {
 

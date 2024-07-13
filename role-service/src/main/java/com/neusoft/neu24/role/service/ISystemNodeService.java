@@ -6,6 +6,12 @@ import com.neusoft.neu24.entity.SystemNode;
 
 import java.util.List;
 
+/**
+ * <b>系统节点业务层接口</b>
+ *
+ * @since 2024-05-21
+ * @author Team-NEU-NanHu
+ */
 public interface ISystemNodeService extends IService<SystemNode> {
 
     /**

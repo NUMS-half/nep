@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.util.NumberUtil;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -45,7 +46,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * <b>统计信息服务实现类</b>
+ * <b>检测统计信息服务实现类</b>
  *
  * @author Team-NEU-NanHu
  * @since 2024-05-21
@@ -55,36 +56,39 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statistics> implements IStatisticsService {
 
+    /**
+     * 日志记录器
+     */
     private static final Logger logger = LoggerFactory.getLogger(StatisticsServiceImpl.class);
 
     /**
-     * 用户服务客户端
+     * User-Service客户端
      */
     private final UserClient userClient;
 
     /**
-     * 网格服务客户端
+     * Grid-Service客户端
      */
     private final GridClient gridClient;
 
     /**
-     * AQI客户端
+     * AQI-Service客户端
      */
     private final AqiClient aqiClient;
 
     /**
-     * 反馈服务客户端
+     * Statistics-Service客户端
      */
     private final ReportClient reportClient;
 
-    @Resource
-    RabbitTemplate rabbitTemplate;
-
+    /**
+     * 检测统计信息Mapper
+     */
     @Resource
     private StatisticsMapper statisticsMapper;
 
     /**
-     * <b>保存网格员测量的统计信息<b/>
+     * 保存网格员测量的统计信息 (需要seata全局事务管理)
      *
      * @param statistics 待保存的统计信息
      * @return 保存结果
@@ -93,74 +97,86 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @GlobalTransactional
     public HttpResponseEntity<Statistics> saveStatistics(Statistics statistics) {
         try {
-            // 1. 异步校验reportId是否存在
+            // 1. 异步调用服务，校验输入合法性
+            // 1.1 异步获取reportId对应的report信息
             CompletableFuture<HttpResponseEntity<ReportDTO>> reportFuture = CompletableFuture.supplyAsync(() ->
                     reportClient.selectReportById(statistics.getReportId())
             );
-
-            // 2. 异步校验检测数值合法性
+            // 1.2 异步校验检测数值合法性
             CompletableFuture<HttpResponseEntity<Boolean>> aqiFuture = CompletableFuture.supplyAsync(() ->
                     aqiClient.validateAqi(statistics)
             );
-
-            // 3. 异步校验网格员是否存在
+            // 1.3 异步获取网格员信息
             CompletableFuture<HttpResponseEntity<User>> userFuture = CompletableFuture.supplyAsync(() ->
                     userClient.selectUser(Map.of("userId", statistics.getGmUserId()))
             );
-
-            // 4. 同步获取所有异步操作的结果
+            // 1.4 同步获取所有异步操作的结果
             CompletableFuture.allOf(reportFuture, aqiFuture, userFuture).join();
             HttpResponseEntity<ReportDTO> reportResponse = reportFuture.get();
             HttpResponseEntity<Boolean> aqiResponse = aqiFuture.get();
             HttpResponseEntity<User> userResponse = userFuture.get();
 
-            // 校验reportId是否存在
+            // 2. 校验report是否存在
             if ( reportResponse.getCode() != 200 ) {
                 return new HttpResponseEntity<Statistics>().fail(ResponseEnum.REPORT_NOT_EXIST);
             } else {
                 ReportDTO report = reportResponse.getData();
-                // 校验Report是否已经被确认
+                // 3. 校验Report是否已经被确认
                 if ( report.getState() == 2 ) {
                     return new HttpResponseEntity<Statistics>().fail(ResponseEnum.REPORT_HAS_CONFIRMED);
                 }
-                // 校验网格是否与Report的网格对应
+                // 4. 校验网格是否与Report的网格对应
                 if ( !report.getTownCode().equals(statistics.getTownCode()) ||
                         !report.getCityCode().equals(statistics.getCityCode()) ||
                         !report.getProvinceCode().equals(statistics.getProvinceCode()) ) {
                     return new HttpResponseEntity<Statistics>().fail(ResponseEnum.REGION_INVALID);
                 }
-                // 校验该用户是否存在
+                // 5. 校验该用户是否存在
                 if ( !report.getUserId().equals(statistics.getUserId()) ) {
                     return new HttpResponseEntity<Statistics>().fail(ResponseEnum.USER_NOT_EXIST);
                 }
             }
 
-            // 校验检测数值合法性
+            // 6. 校验检测数值合法性
             if ( aqiResponse.getCode() != 200 ) {
                 return new HttpResponseEntity<Statistics>().fail(ResponseEnum.STATISTICS_VALUE_INVALID);
             }
 
-            // 校验网格员是否存在
+            // 7. 校验网格员是否存在
             if ( userResponse.getCode() != 200 ) {
                 return new HttpResponseEntity<Statistics>().fail(ResponseEnum.USER_NOT_EXIST);
             }
 
-
-            // 如果所有校验都通过，保存统计信息
+            // 8. 如果所有校验都通过，保存统计信息
             logger.info("数据合法性校验通过，开始保存统计信息");
+            statistics.setConfirmTime(LocalDateTimeUtil.now());
+            if ( statisticsMapper.insert(statistics) > 0 ) {
+                // 9. 检测信息确认成功，通知反馈服务、用户服务更新反馈状态与网格员工作状态
+                // 通知反馈服务更新反馈状态的另一种方法(MQ异步通知服务)
+                // rabbitTemplate.convertAndSend("statistics.exchange", "save.success", statistics.getReportId());
+                CompletableFuture<HttpResponseEntity<Boolean>> reportStateFuture = CompletableFuture.supplyAsync(() ->
+                        reportClient.setReportState(statistics.getReportId(), 2));
+                CompletableFuture<HttpResponseEntity<Boolean>> gmStateFuture = CompletableFuture.supplyAsync(() ->
+                        userClient.updateGmState(statistics.getGmUserId(), 0));
 
-            statisticsMapper.insert(statistics);
-            // 1. 反馈服务更新反馈状态(同步)
-            reportClient.setReportState(statistics.getReportId(), 2);
-//                // 1. 通知反馈服务更新反馈状态(异步)
-//            rabbitTemplate.convertAndSend("statistics.exchange", "save.success", statistics.getReportId());
-            // 2. 上报信息更新成功，发送消息到公众监督员的消息队列
-            rabbitTemplate.convertAndSend("user.exchange", "notification." + statistics.getUserId(), statistics);
-            logger.info("统计信息: {} 保存成功", statistics.getStatisticsId());
-            return new HttpResponseEntity<Statistics>().success(statistics);
-        } catch ( InterruptedException | ExecutionException e ) {
-            logger.error("异步检查输入合法性时发生异常，实测信息: {} 保存失败:{}", statistics.getStatisticsId(), e.getMessage(), e);
-            throw new SaveException("异步检查输入合法性时发生异常", e);
+                CompletableFuture.allOf(reportStateFuture, gmStateFuture).join();
+                HttpResponseEntity<Boolean> reportStateResponse = reportStateFuture.get();
+                HttpResponseEntity<Boolean> gmStateResponse = gmStateFuture.get();
+                if ( reportStateResponse.getCode() != 200 || gmStateResponse.getCode() != 200 ) {
+                    throw new InterruptedException("更新状态时，异步调用服务发生异常");
+                } else {
+                    // 10. 反馈上报信息确认成功
+                    logger.info("统计信息: {} 保存成功", statistics.getStatisticsId());
+                    return new HttpResponseEntity<Statistics>().success(statistics);
+                }
+            } else {
+                throw new SaveException("保存统计信息失败");
+            }
+        }
+        // 11. 异常处理
+        catch ( InterruptedException | ExecutionException e ) {
+            logger.error("异步调用服务发生异常，实测信息: {} 保存失败:{}", statistics.getStatisticsId(), e.getMessage(), e);
+            throw new SaveException("异步调用服务发生异常: " + e.getMessage(), e);
         } catch ( DataAccessException e ) {
             logger.warn("数据输不符合数据库约束，实测信息: {} 保存失败:{}", statistics.getStatisticsId(), e.getMessage(), e);
             throw new SaveException("保存实测信息时,数据输入不符合数据库约束", e);
@@ -174,7 +190,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     }
 
     /**
-     * <b>更新统计信息<b/>
+     * 更新统计信息
      *
      * @param statistics 待更新的统计信息
      * @return 更新结果
@@ -182,22 +198,33 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Override
     @Transactional
     public HttpResponseEntity<Boolean> updateStatistics(Statistics statistics) {
+        // 1. 校验输入值是否为空
+        if ( StringUtils.isEmpty(statistics.getStatisticsId()) ) {
+            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.CONTENT_IS_NULL);
+        }
+        // 2. 更新统计信息
         try {
-            return statisticsMapper.updateById(statistics) != 0 ?
-                    new HttpResponseEntity<Boolean>().success(true) :
-                    new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            if ( statisticsMapper.updateById(statistics) > 0 ) {
+                logger.info("统计信息: {} 更新成功", statistics.getStatisticsId());
+                return new HttpResponseEntity<Boolean>().success(true);
+            } else {
+                logger.warn("统计信息: {} 更新失败", statistics.getStatisticsId());
+                return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            }
         } catch ( DataAccessException e ) {
-            logger.warn("更新统计信息失败 {}", e.getMessage(), e);
-            return new HttpResponseEntity<Boolean>().fail(ResponseEnum.UPDATE_FAIL);
+            // 3. 数据库约束异常处理
+            logger.error("由于输入数据不符合数据库约束，更新统计信息失败 {}", e.getMessage(), e);
+            throw new UpdateException("由于输入数据不符合数据库约束，更新统计信息失败", e);
         } catch ( Exception e ) {
-            logger.error("统计信息更新失败:{}", e.getMessage(), e);
-            throw new UpdateException("更新统计信息失败", e);
+            // 4. 其他异常处理
+            logger.error("更新统计信息是发生异常: {}，统计信息更新失败", e.getMessage(), e);
+            throw new UpdateException("更新统计信息发生异常", e);
         }
     }
 
 
     /**
-     * <b>条件分页查询统计信息<b/>
+     * 条件分页查询统计信息
      *
      * @param statistics 查询条件
      * @param current    当前页
@@ -208,10 +235,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Transactional(readOnly = true)
     public HttpResponseEntity<IPage<StatisticsDTO>> selectStatisticsByPage(Statistics statistics, long current, long size) {
         try {
+            // 1. 分页查询统计信息
             IPage<Statistics> page = new Page<>(current, size);
             IPage<Statistics> pages;
             LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
-            // 可通过省市区和确认时间四种条件查询
+            // 可通过省/市/区/确认时间/AQI等级共5种条件查询
             if ( statistics != null ) {
                 queryWrapper.eq(StringUtils.isNotBlank(statistics.getGmUserId()), Statistics::getGmUserId, statistics.getGmUserId())
                         .eq(StringUtils.isNotBlank(statistics.getProvinceCode()), Statistics::getProvinceCode, statistics.getProvinceCode())
@@ -226,20 +254,23 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
             if ( pages == null || pages.getTotal() == 0 ) {
                 return new HttpResponseEntity<IPage<StatisticsDTO>>().resultIsNull(null);
             }
+            // 2. 批量将统计信息转换为DTO
             IPage<StatisticsDTO> dtoPages = new Page<>();
             dtoPages.setRecords(fillStatisticsDTO(pages.getRecords()));
             dtoPages.setTotal(pages.getTotal());
             dtoPages.setCurrent(pages.getCurrent());
             dtoPages.setSize(pages.getSize());
+            logger.info("分页查询统计信息成功");
             return new HttpResponseEntity<IPage<StatisticsDTO>>().success(dtoPages);
         } catch ( Exception e ) {
+            // 3. 异常处理
             logger.error("分页查询统计信息失败:{}", e.getMessage(), e);
             throw new QueryException("分页查询统计信息时发生异常", e);
         }
     }
 
     /**
-     * <b>根据ID查询统计信息<b/>
+     * 根据ID查询统计信息
      *
      * @param statisticsId 统计信息ID
      * @return 查询结果
@@ -247,20 +278,30 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Override
     @Transactional(readOnly = true)
     public HttpResponseEntity<StatisticsDTO> selectStatisticsById(String statisticsId) throws QueryException {
+        // 1. 校验输入值是否为空
         if ( StringUtils.isEmpty(statisticsId) ) {
             return new HttpResponseEntity<StatisticsDTO>().fail(ResponseEnum.CONTENT_IS_NULL);
         } else {
+            // 2. 查询统计信息
             try {
+                // 3. 根据ID查询统计信息
                 QueryWrapper<Statistics> queryWrapper = new QueryWrapper<>();
                 queryWrapper.eq("statistics_id", statisticsId);
                 Statistics result = statisticsMapper.selectOne(queryWrapper);
                 if ( result == null ) {
                     return new HttpResponseEntity<StatisticsDTO>().resultIsNull(null);
                 } else {
+                    // 4. 查询到结果时，填充检测信息DTO
                     StatisticsDTO statisticsDTO = fillStatisticsDTO(result);
+                    if ( statisticsDTO == null ) {
+                        logger.warn("根据ID查询统计信息: {} 时，填充DTO失败，返回原始结果", statisticsId);
+                        return new HttpResponseEntity<StatisticsDTO>().success(new StatisticsDTO(result));
+                    }
+                    logger.info("根据ID查询统计信息: {} 成功", statisticsId);
                     return new HttpResponseEntity<StatisticsDTO>().success(statisticsDTO);
                 }
             } catch ( QueryException e ) {
+                // 5. 异常处理
                 logger.error("根据ID查询统计信息失败:{}", e.getMessage(), e);
                 throw new QueryException("根据ID查询统计信息时发生异常", e);
             }
@@ -268,7 +309,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     }
 
     /**
-     * <b>根据反馈ID查询统计信息<b/>
+     * 根据反馈ID查询统计信息
      *
      * @param reportId 反馈ID
      * @return 查询结果
@@ -276,9 +317,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Override
     @Transactional(readOnly = true)
     public HttpResponseEntity<List<Statistics>> selectStatisticsByReportId(String reportId) {
+        // 1. 校验输入值反馈信息ID是否为空
         if ( StringUtils.isEmpty(reportId) ) {
             return new HttpResponseEntity<List<Statistics>>().fail(ResponseEnum.CONTENT_IS_NULL);
         } else {
+            // 2. 查询统计信息
             try {
                 LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
                 queryWrapper.eq(Statistics::getReportId, reportId).orderByDesc(Statistics::getConfirmTime);
@@ -290,6 +333,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                     return new HttpResponseEntity<List<Statistics>>().success(list);
                 }
             } catch ( QueryException e ) {
+                // 3. 异常处理
                 logger.error("根据反馈ID查询统计信息失败:{}", e.getMessage(), e);
                 throw new QueryException("根据反馈ID查询统计信息时发生异常", e);
             }
@@ -338,46 +382,56 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Override
     @Transactional(readOnly = true)
     public HttpResponseEntity<List<MonthAQIExcessDTO>> selectAQIExcessTendency() {
-        List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess();
-        if ( CollUtil.isEmpty(list) ) {
-            return new HttpResponseEntity<List<MonthAQIExcessDTO>>().resultIsNull(null);
+        try {
+            // 1. 查询所有月份AQI指数超标统计
+            List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess();
+            if ( CollUtil.isEmpty(list) ) {
+                return new HttpResponseEntity<List<MonthAQIExcessDTO>>().resultIsNull(null);
+            }
+            logger.info("按月查询所有AQI指数超标统计成功");
+            return new HttpResponseEntity<List<MonthAQIExcessDTO>>().success(list);
+        } catch ( Exception e ) {
+            logger.error("按月查询所有AQI指数超标统计时发生异常: {}", e.getMessage(), e);
+            throw new QueryException("按月查询所有AQI指数超标统计时发生异常", e);
         }
-        logger.info("查询按月AQI指数超标统计成功");
-        return new HttpResponseEntity<List<MonthAQIExcessDTO>>().success(list);
     }
 
     /**
      * 按月分页查询AQI指数超标统计
      *
-     * @return AQI指数等级分布统计
+     * @return AQI指数等级分布统计分页数据
      */
     @Override
     @Transactional(readOnly = true)
     public HttpResponseEntity<IPage<MonthAQIExcessDTO>> selectAQIExcessTendencyPage(int current, int size) {
         try {
+            // 1. 计算页偏移量，并查询所有月份AQI指数超标统计
             int offset = (current - 1) * size;
             List<MonthAQIExcessDTO> list = statisticsMapper.selectMonthAQIExcess();
             if ( CollUtil.isEmpty(list) ) {
                 return new HttpResponseEntity<IPage<MonthAQIExcessDTO>>().resultIsNull(null);
             }
 
-            // 实现分页
+            // 2. 实现分页
             List<MonthAQIExcessDTO> paginatedList = list.stream()
                     .skip(offset)
                     .limit(size)
                     .collect(Collectors.toList());
 
+            // 3. 封装分页数据
             IPage<MonthAQIExcessDTO> page = new Page<>(current, size, list.size());
             page.setRecords(paginatedList);
 
             if ( CollUtil.isEmpty(paginatedList) ) {
                 return new HttpResponseEntity<IPage<MonthAQIExcessDTO>>().resultIsNull(null);
             }
+            // 4. 返回分页数据
             logger.info("分页查询按月AQI指数超标统计成功");
             return new HttpResponseEntity<IPage<MonthAQIExcessDTO>>().success(page);
         } catch ( Exception e ) {
-            logger.error("查询按月AQI指数超标统计失败:{}", e.getMessage(), e);
-            throw new QueryException("查询按月AQI指数超标统计时发生异常", e);
+            // 5. 异常处理
+            logger.error("按月分页查询AQI指数超标统计发生异常: {}", e.getMessage(), e);
+            throw new QueryException("按月分页查询AQI指数超标统计时发生异常", e);
         }
     }
 
@@ -392,6 +446,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         try {
             // 1. 查询AQI分布情况
             List<AQIDistributeDTO> list = statisticsMapper.selectAQIDistribution();
+            // 1.1 计算AQI指数超标总数
             int total = list.stream().mapToInt(AQIDistributeDTO::getCount).sum();
             if ( CollUtil.isEmpty(list) ) {
                 return new HttpResponseEntity<List<AQIDistributeDTO>>().resultIsNull(null);
@@ -399,6 +454,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
             // 2. 结果不为空时，远程调用AQI服务获取AQI等级/详情信息
             HttpResponseEntity<List<Aqi>> aqiResponse = aqiClient.selectAllAqi();
             if ( aqiResponse.getCode() == 200 ) {
+                // 3. 填充AQI等级/详情信息
                 List<Aqi> aqiList = aqiClient.selectAllAqi().getData();
                 list.forEach(item -> {
                     Aqi aqi = aqiList.stream().filter(a -> a.getAqiId().equals(item.getAqiId())).findFirst().orElse(null);
@@ -410,15 +466,15 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                         item.setPercent(NumberUtil.roundStr(percent, 2));
                     }
                 });
+                // 4. 返回结果
+                logger.info("查询AQI指数等级分布统计成功");
                 return new HttpResponseEntity<List<AQIDistributeDTO>>().success(list);
             } else {
                 return new HttpResponseEntity<List<AQIDistributeDTO>>().error(ResponseEnum.SERVICE_UNAVAILABLE);
             }
-        } catch ( QueryException e ) {
-            logger.error("远程调用AQI服务失败:{}", e.getMessage(), e);
-            return new HttpResponseEntity<List<AQIDistributeDTO>>().error(ResponseEnum.SERVICE_UNAVAILABLE);
         } catch ( Exception e ) {
-            logger.error("查询AQI指数等级分布统计失败:{}", e.getMessage(), e);
+            // 5. 异常处理
+            logger.error("查询AQI指数等级分布统计发生异常: {}", e.getMessage(), e);
             throw new QueryException("查询AQI指数等级分布统计时发生异常", e);
         }
     }
@@ -426,19 +482,19 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     /**
      * 查询全国统计信息总览
      *
-     * @return 全国统计信息总览
+     * @return 全国统计信息总览信息Map
      */
     @Override
     @Transactional(readOnly = true)
-    public HttpResponseEntity<Map<String,StatisticsTotalDTO>> selectStatisticsSummary() {
-        // 1. 异步调用获取完整的统计信息
+    public HttpResponseEntity<Map<String, StatisticsTotalDTO>> selectStatisticsSummary() {
+        // 1. 异步调用获取当前以及上月的完整统计信息与网格信息
         LocalDateTime now = LocalDateTime.now();
         CompletableFuture<StatisticsTotalDTO> nowTotalDTOFuture = CompletableFuture.supplyAsync(() -> statisticsMapper.selectStatisticsSummary(now));
         CompletableFuture<StatisticsTotalDTO> monthAgoTotalDTOFuture = CompletableFuture.supplyAsync(() -> statisticsMapper.selectStatisticsSummary(now.minusMonths(1)));
         CompletableFuture<HttpResponseEntity<Map<Object, Object>>> gridTotalFuture = CompletableFuture.supplyAsync(gridClient::selectGridTotal);
 
         try {
-            // 2. 等待所有调用完成
+            // 2. 等待所有调用完成，获取统计信息与网格信息
             CompletableFuture.allOf(nowTotalDTOFuture, monthAgoTotalDTOFuture, gridTotalFuture).join();
             StatisticsTotalDTO nowTotalDTO = nowTotalDTOFuture.get();
             StatisticsTotalDTO monthAgoTotalDTO = monthAgoTotalDTOFuture.get();
@@ -447,25 +503,30 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
             if ( gridTotalResponse.getCode() == 200 && nowTotalDTO != null && monthAgoTotalDTO != null ) {
                 Map<Object, Object> gridTotal = gridTotalResponse.getData();
 
+                // 3.1 填充省市区网格总数
                 Integer province = (Integer) gridTotal.get("province");
                 Integer city = (Integer) gridTotal.get("city");
                 Integer town = (Integer) gridTotal.get("town");
 
+                // 3.2 填充当前省市区统计数量
                 nowTotalDTO.setProvince(province);
                 nowTotalDTO.setCity(city);
                 nowTotalDTO.setTown(town);
 
+                // 3.3 填充上月省市区统计数量
                 monthAgoTotalDTO.setProvince(province);
                 monthAgoTotalDTO.setCity(city);
                 monthAgoTotalDTO.setTown(town);
 
-                logger.info("查询 本日 与 上月本日 的全国统计信息总览成功");
-                return new HttpResponseEntity<Map<String,StatisticsTotalDTO>>().success(Map.of("now", nowTotalDTO, "monthAgo", monthAgoTotalDTO));
+                // 4. 返回结果
+                logger.info("查询当前与上月本日的全国统计信息总览成功");
+                return new HttpResponseEntity<Map<String, StatisticsTotalDTO>>().success(Map.of("now", nowTotalDTO, "monthAgo", monthAgoTotalDTO));
             }
             logger.warn("远程调用查询全国统计信息总览时，获取网格信息失败");
-            return new HttpResponseEntity<Map<String,StatisticsTotalDTO>>().resultIsNull(null);
+            return new HttpResponseEntity<Map<String, StatisticsTotalDTO>>().resultIsNull(null);
         } catch ( InterruptedException | ExecutionException e ) {
-            logger.error("异步调用查询全国统计信息总览失败:{}", e.getMessage(), e);
+            // 5. 异常处理
+            logger.error("异步调用查询全国统计信息总览发生异常: {}", e.getMessage(), e);
             throw new QueryException("异步调用查询全国统计信息总览时发生异常", e);
         }
     }
@@ -489,6 +550,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         CompletableFuture.allOf(userFuture, gmFuture, gridFuture).join();
 
         try {
+            // 3. 获取调用结果
             HttpResponseEntity<User> userResponse = userFuture.get();
             HttpResponseEntity<User> gmResponse = gmFuture.get();
             HttpResponseEntity<Grid> gridResponse = gridFuture.get();
@@ -498,38 +560,48 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                 return null;
             }
 
+            // 4. 填充统计信息DTO
             StatisticsDTO statisticsDTO = new StatisticsDTO(statistics);
             statisticsDTO.fillUserInfo(userResponse.getData(), gmResponse.getData());
             statisticsDTO.fillGridInfo(gridResponse.getData());
             return statisticsDTO;
         } catch ( InterruptedException | ExecutionException e ) {
+            // 5. 异常处理
             logger.error("填充统计信息: {} 的DTO时发生异常", statistics.getStatisticsId(), e);
             throw new QueryException("填充统计信息DTO时发生异常", e);
         }
     }
 
+    /**
+     * 批量填充StatisticsDTO
+     */
     private List<StatisticsDTO> fillStatisticsDTO(List<Statistics> statisticsList) {
+        // 1. 获取所有统计信息的用户ID、网格员ID、区域编码列表
         List<String> gmUserIds = statisticsList.stream().map(Statistics::getGmUserId).toList();
         List<String> userIds = statisticsList.stream().map(Statistics::getUserId).toList();
         List<String> townCodes = statisticsList.stream().map(Statistics::getTownCode).toList();
 
+        // 2. 异步调用服务，获取所有用户、网格员、区域信息
         CompletableFuture<HttpResponseEntity<List<User>>> gmFuture = CompletableFuture.supplyAsync(() -> userClient.selectBatchUser(gmUserIds));
         CompletableFuture<HttpResponseEntity<List<User>>> userFuture = CompletableFuture.supplyAsync(() -> userClient.selectBatchUser(userIds));
         CompletableFuture<HttpResponseEntity<List<Grid>>> gridFuture = CompletableFuture.supplyAsync(() -> gridClient.selectGridByMultipleTownCodes(townCodes));
 
-        // 等待异步调用完成
+        // 3. 等待异步调用完成，获取所有用户、网格员、区域信息
         CompletableFuture.allOf(gmFuture, userFuture, gridFuture).join();
         try {
             HttpResponseEntity<List<User>> gmResponse = gmFuture.get();
             HttpResponseEntity<List<User>> userResponse = userFuture.get();
             HttpResponseEntity<List<Grid>> gridResponse = gridFuture.get();
 
-            if ( gmResponse.getCode()!= 200 || gridResponse.getCode() != 200 || userResponse.getCode()!=200 ) {
+            if ( gmResponse.getCode() != 200 || gridResponse.getCode() != 200 || userResponse.getCode() != 200 ) {
                 return Collections.emptyList();
             } else {
+                // 4. 将用户、网格员、区域信息转换为Map
                 Map<String, User> gmsById = gmResponse.getData().stream().collect(Collectors.toMap(User::getUserId, Function.identity()));
                 Map<String, User> usersById = userResponse.getData().stream().collect(Collectors.toMap(User::getUserId, Function.identity()));
                 Map<String, Grid> gridsByTownCode = gridResponse.getData().stream().collect(Collectors.toMap(Grid::getTownCode, Function.identity()));
+
+                // 5. 批量填充统计信息DTO
                 List<StatisticsDTO> statisticsDTOS = new ArrayList<>();
                 for ( Statistics s : statisticsList ) {
                     StatisticsDTO statisticsDTO = new StatisticsDTO(s);
@@ -537,10 +609,12 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                     statisticsDTO.fillGridInfo(gridsByTownCode.get(s.getTownCode()));
                     statisticsDTOS.add(statisticsDTO);
                 }
+                // 6. 返回结果
                 logger.info("批量填充检测信息DTO成功");
                 return statisticsDTOS;
             }
         } catch ( ExecutionException | InterruptedException e ) {
+            // 7. 异常处理
             logger.error("批量填充检测信息DTO时，异步远程调用发生异常", e);
             throw new QueryException("批量填充检测信息DTO时，异步远程调用发生异常", e);
         }

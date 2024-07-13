@@ -10,9 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>
- *  服务类
- * </p>
+ * <b>检测统计信息服务接口</b>
  *
  * @author Team-NEU-NanHu
  * @since 2024-05-21
@@ -21,7 +19,7 @@ public interface IStatisticsService extends IService<Statistics> {
 
 
     /**
-     * <b>保存网格员测量的统计信息<b/>
+     * 保存网格员测量的统计信息
      * @param statistics 待保存的统计信息
      * @return 保存结果
      */
@@ -29,14 +27,14 @@ public interface IStatisticsService extends IService<Statistics> {
 
 
     /**
-     * <b>更新统计信息<b/>
+     * 更新统计信息
      * @param statistics 待更新的统计信息
      * @return 更新结果
      */
     HttpResponseEntity<Boolean> updateStatistics(Statistics statistics);
 
     /**
-     * <b>条件分页查询统计信息<b/>
+     * 条件分页查询统计信息
      * @param statistics 查询条件
      * @param current 当前页
      * @param size 每页数据条数
@@ -45,12 +43,18 @@ public interface IStatisticsService extends IService<Statistics> {
     HttpResponseEntity<IPage<StatisticsDTO>> selectStatisticsByPage(Statistics statistics, long current, long size);
 
     /**
-     * <b>根据ID查询统计信息<b/>
+     * 根据ID查询统计信息
      * @param statisticsId 统计信息ID
      * @return 查询结果
      */
     HttpResponseEntity<StatisticsDTO> selectStatisticsById(String statisticsId);
 
+    /**
+     * 根据反馈ID查询统计信息
+     *
+     * @param reportId 反馈ID
+     * @return 查询结果
+     */
     HttpResponseEntity<List<Statistics>> selectStatisticsByReportId(String reportId);
 
     /**
@@ -68,6 +72,8 @@ public interface IStatisticsService extends IService<Statistics> {
 
     /**
      * 按月分页查询AQI指数超标统计
+     * @param current 当前页
+     * @param size 每页数据条数
      * @return AQI超标趋势统计
      */
     HttpResponseEntity<IPage<MonthAQIExcessDTO>> selectAQIExcessTendencyPage(int current, int size);
@@ -78,5 +84,9 @@ public interface IStatisticsService extends IService<Statistics> {
      */
     HttpResponseEntity<List<AQIDistributeDTO>> selectAQIDistribution();
 
+    /**
+     * 查询全国统计信息汇总
+     * @return 全国统计信息汇总Map
+     */
     HttpResponseEntity<Map<String,StatisticsTotalDTO>> selectStatisticsSummary();
 }

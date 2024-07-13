@@ -7,10 +7,12 @@
         WITH RECURSIVE subtree AS (SELECT *
                                    FROM system_node
                                    WHERE node_id = #{nodeId}
+                                     AND state = 1
                                    UNION ALL
                                    SELECT sn.*
                                    FROM system_node sn
-                                            INNER JOIN subtree s ON sn.pid = s.node_id)
+                                            INNER JOIN subtree s ON sn.pid = s.node_id
+                                   WHERE sn.state = 1)
         SELECT *
         FROM subtree;
     </select>

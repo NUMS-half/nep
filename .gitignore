@@ -34,3 +34,5 @@ build/
 
 ### log file ###
 .logs/
+
+.fastRequest/

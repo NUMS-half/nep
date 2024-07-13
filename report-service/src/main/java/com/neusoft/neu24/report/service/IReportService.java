@@ -9,9 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * <p>
- *  服务类
- * </p>
+ * <b>反馈上报服务接口</b>
  *
  * @author Team-NEU-NanHu
  * @since 2024-05-21

@@ -6,9 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
+ * <b>Aqi类 Mapper 接口</b>
  *
  * @author Team-NEU-NanHu
  * @since 2024-05-21

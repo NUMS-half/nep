@@ -20,6 +20,7 @@ public class NepCorsConfig {
     @Bean
     public CorsWebFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
+        config.addAllowedOriginPattern("*");
         config.addAllowedMethod("*");  // 是什么请求方法，GET POST PUT DELETE ...
         config.addAllowedOrigin("*");  // 来自哪个域名的请求，*号表示所有
         config.addAllowedHeader("*");  // 是什么请求头

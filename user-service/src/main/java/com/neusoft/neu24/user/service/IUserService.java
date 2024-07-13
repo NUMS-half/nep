@@ -29,6 +29,13 @@ public interface IUserService extends IService<User> {
     HttpResponseEntity<UserDTO> login(String username, String password);
 
     /**
+     * 用户注销业务
+     * @param userId 用户ID
+     * @return 注销是否成功
+     */
+    HttpResponseEntity<Boolean> logout(String userId);
+
+    /**
      * 完整信息用户注册业务
      *
      * @param user 用户信息
